@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(npx create-expo-app@latest . --template blank-typescript)",
+      "PowerShell(node -v)",
+      "PowerShell(npm -v)",
+      "Bash(npx create-expo-app@latest app-financas --template blank-typescript)",
+      "Bash(rm -rf app-financas/.claude app-financas/CLAUDE.md app-financas/AGENTS.md)",
+      "Bash(mv app-financas/* app-financas/.gitignore .)",
+      "Bash(rmdir app-financas *)",
+      "Bash(git commit *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)"
+    ]
+  }
+}
