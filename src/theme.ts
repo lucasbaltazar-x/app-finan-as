@@ -1,0 +1,16 @@
+export const colors = {
+  bg: '#0f1117',
+  surface: '#1a1d27',
+  card: '#22263a',
+  border: '#2a2f45',
+  primary: '#43a047',
+  primaryDark: '#2e7d32',
+  primaryLight: '#1b5e2033',
+  income: '#43a047',
+  expense: '#e53935',
+  incomeSubtle: '#1b5e2033',
+  expenseSubtle: '#b71c1c33',
+  text: '#f0f0f0',
+  subtext: '#9e9e9e',
+  placeholder: '#5a5f7a',
+};
