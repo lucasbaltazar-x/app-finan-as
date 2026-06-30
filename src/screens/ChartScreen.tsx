@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView, KeyboardAvoidingView, Platform, InputAccessoryView, Keyboard } from 'react-native';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/format';
 import { TransactionType } from '../types';
@@ -110,30 +110,44 @@ export default function ChartScreen() {
       </TouchableOpacity>
 
       <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={s.modalOverlay}>
-          <View style={s.modalContent}>
-            <Text style={s.modalTitle}>Nova transação</Text>
-            <View style={s.typeRow}>
-              <TouchableOpacity style={[s.typeBtn, type === 'expense' && s.typeBtnExpense]} onPress={() => setType('expense')}>
-                <Text style={[s.typeText, type === 'expense' && { color: colors.expense, fontFamily: fonts.semibold }]}>Despesa</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.typeBtn, type === 'income' && s.typeBtnIncome]} onPress={() => setType('income')}>
-                <Text style={[s.typeText, type === 'income' && { color: colors.income, fontFamily: fonts.semibold }]}>Receita</Text>
-              </TouchableOpacity>
-            </View>
-            <TextInput style={s.input} placeholder="Valor (ex: 150.00)" placeholderTextColor={colors.placeholder} keyboardType="decimal-pad" value={amount} onChangeText={setAmount} />
-            <TextInput style={s.input} placeholder="Categoria (ex: Alimentação)" placeholderTextColor={colors.placeholder} value={category} onChangeText={setCategory} />
-            <TextInput style={s.input} placeholder="Descrição (opcional)" placeholderTextColor={colors.placeholder} value={description} onChangeText={setDescription} />
-            <View style={s.modalActions}>
-              <TouchableOpacity style={s.cancelBtn} onPress={() => { resetForm(); setModalVisible(false); }}>
-                <Text style={s.cancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.saveBtn} onPress={handleSave}>
-                <Text style={s.saveText}>Salvar</Text>
-              </TouchableOpacity>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={s.modalOverlay}>
+            <View style={s.modalContent}>
+              <Text style={s.modalTitle}>Nova transação</Text>
+              <View style={s.typeRow}>
+                <TouchableOpacity style={[s.typeBtn, type === 'expense' && s.typeBtnExpense]} onPress={() => setType('expense')}>
+                  <Text style={[s.typeText, type === 'expense' && { color: colors.expense, fontFamily: fonts.semibold }]}>Despesa</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[s.typeBtn, type === 'income' && s.typeBtnIncome]} onPress={() => setType('income')}>
+                  <Text style={[s.typeText, type === 'income' && { color: colors.income, fontFamily: fonts.semibold }]}>Receita</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput style={s.input} placeholder="Valor (ex: 150.00)" placeholderTextColor={colors.placeholder} keyboardType="decimal-pad" value={amount} onChangeText={setAmount} inputAccessoryViewID="newTxAccessory" returnKeyType="done" />
+              <TextInput style={s.input} placeholder="Categoria (ex: Alimentação)" placeholderTextColor={colors.placeholder} value={category} onChangeText={setCategory} inputAccessoryViewID="newTxAccessory" returnKeyType="done" />
+              <TextInput style={s.input} placeholder="Descrição (opcional)" placeholderTextColor={colors.placeholder} value={description} onChangeText={setDescription} inputAccessoryViewID="newTxAccessory" returnKeyType="done" onSubmitEditing={handleSave} />
+              <View style={s.modalActions}>
+                <TouchableOpacity style={s.cancelBtn} onPress={() => { resetForm(); setModalVisible(false); }}>
+                  <Text style={s.cancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.saveBtn} onPress={handleSave}>
+                  <Text style={s.saveText}>Salvar</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
+        {Platform.OS === 'ios' && (
+          <InputAccessoryView nativeID="newTxAccessory">
+            <View style={s.accessoryBar}>
+              <TouchableOpacity onPress={Keyboard.dismiss}>
+                <Text style={s.accessoryText}>Concluir</Text>
+              </TouchableOpacity>
+            </View>
+          </InputAccessoryView>
+        )}
       </Modal>
     </View>
   );
@@ -174,4 +188,6 @@ const s = StyleSheet.create({
   cancelText: { color: colors.subtext, fontFamily: fonts.medium },
   saveBtn: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 12, backgroundColor: colors.primary },
   saveText: { color: '#fff', fontFamily: fonts.semibold },
+  accessoryBar: { backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.border, padding: 10, alignItems: 'flex-end' },
+  accessoryText: { color: colors.primary, fontFamily: fonts.semibold, fontSize: 16, paddingHorizontal: 8 },
 });

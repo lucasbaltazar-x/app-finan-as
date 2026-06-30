@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput,
+  KeyboardAvoidingView, Platform, InputAccessoryView, Keyboard,
 } from 'react-native';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, currentMonthKey } from '../utils/format';
@@ -104,29 +105,46 @@ export default function HomeScreen() {
       })}
 
       <Modal visible={!!quickShortcut} animationType="slide" transparent>
-        <View style={s.modalOverlay}>
-          <View style={s.modalContent}>
-            <Text style={s.modalTitle}>{quickShortcut?.label}</Text>
-            <Text style={s.modalSubtitle}>{quickShortcut?.category}</Text>
-            <TextInput
-              style={s.input}
-              placeholder="Valor (ex: 150.00)"
-              placeholderTextColor={colors.placeholder}
-              keyboardType="decimal-pad"
-              value={quickAmount}
-              onChangeText={setQuickAmount}
-              autoFocus
-            />
-            <View style={s.modalActions}>
-              <TouchableOpacity style={s.cancelBtn} onPress={() => setQuickShortcut(null)}>
-                <Text style={s.cancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.saveBtn} onPress={handleQuickSave}>
-                <Text style={s.saveText}>Lançar</Text>
-              </TouchableOpacity>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={s.modalOverlay}>
+            <View style={s.modalContent}>
+              <Text style={s.modalTitle}>{quickShortcut?.label}</Text>
+              <Text style={s.modalSubtitle}>{quickShortcut?.category}</Text>
+              <TextInput
+                style={s.input}
+                placeholder="Valor (ex: 150.00)"
+                placeholderTextColor={colors.placeholder}
+                keyboardType="decimal-pad"
+                value={quickAmount}
+                onChangeText={setQuickAmount}
+                autoFocus
+                inputAccessoryViewID="quickAmountAccessory"
+                returnKeyType="done"
+                onSubmitEditing={handleQuickSave}
+              />
+              <View style={s.modalActions}>
+                <TouchableOpacity style={s.cancelBtn} onPress={() => setQuickShortcut(null)}>
+                  <Text style={s.cancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.saveBtn} onPress={handleQuickSave}>
+                  <Text style={s.saveText}>Lançar</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
+        {Platform.OS === 'ios' && (
+          <InputAccessoryView nativeID="quickAmountAccessory">
+            <View style={s.accessoryBar}>
+              <TouchableOpacity onPress={Keyboard.dismiss}>
+                <Text style={s.accessoryText}>Concluir</Text>
+              </TouchableOpacity>
+            </View>
+          </InputAccessoryView>
+        )}
       </Modal>
     </ScrollView>
   );
@@ -170,4 +188,6 @@ const s = StyleSheet.create({
   cancelText: { color: colors.subtext, fontFamily: fonts.medium },
   saveBtn: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 12, backgroundColor: colors.primary },
   saveText: { color: '#fff', fontFamily: fonts.semibold },
+  accessoryBar: { backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.border, padding: 10, alignItems: 'flex-end' },
+  accessoryText: { color: colors.primary, fontFamily: fonts.semibold, fontSize: 16, paddingHorizontal: 8 },
 });
