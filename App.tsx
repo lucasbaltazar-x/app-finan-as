@@ -34,7 +34,7 @@ const navTheme = {
   },
 };
 
-const TAB_NAMES = ['Início', 'Gráfico', 'Calendário', 'Orçamento'];
+const TAB_NAMES = ['Lançar', 'Gráfico', 'Calendário', 'Orçamento'];
 
 function TabDot({ focused }: { focused: boolean }) {
   return (
@@ -83,7 +83,7 @@ export default function App() {
               headerTitleStyle: { fontFamily: fonts.semibold, fontSize: 16 },
             })}
           >
-            <Tab.Screen name="Início" component={HomeScreen} />
+            <Tab.Screen name="Lançar" component={HomeScreen} />
             <Tab.Screen name="Gráfico" component={ChartScreen} />
             <Tab.Screen name="Calendário" component={CalendarScreen} />
             <Tab.Screen name="Orçamento" component={BudgetGoalsScreen} />
