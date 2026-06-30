@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput,
   KeyboardAvoidingView, Platform, InputAccessoryView, Keyboard,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, currentMonthKey } from '../utils/format';
 import { colors, fonts } from '../theme';
@@ -46,6 +47,8 @@ export default function HomeScreen() {
   const [catAmount, setCatAmount] = useState('');
   const [catName, setCatName] = useState('');   // só usado em "Editar"
   const [catDesc, setCatDesc] = useState('');
+  const [catDate, setCatDate] = useState(new Date());
+  const [showPicker, setShowPicker] = useState(false);
 
   const monthKey = currentMonthKey();
   const monthTransactions = transactions.filter((t) => t.date.startsWith(monthKey));
@@ -58,6 +61,8 @@ export default function HomeScreen() {
     setSelCat(cat);
     setCatAmount('');
     setCatName('');
+    setCatDate(new Date());
+    setShowPicker(false);
     setCatDesc('');
   }
 
@@ -72,7 +77,7 @@ export default function HomeScreen() {
       amount: parsed,
       category,
       description: catDesc.trim(),
-      date: new Date().toISOString(),
+      date: catDate.toISOString(),
     });
     setSelCat(null);
   }
@@ -229,6 +234,28 @@ export default function HomeScreen() {
                 onSubmitEditing={handleCatSave}
               />
 
+              {/* Seletor de data */}
+              <TouchableOpacity style={s.dateRow} onPress={() => { Keyboard.dismiss(); setShowPicker(true); }}>
+                <Text style={s.dateLabel}>Data</Text>
+                <Text style={s.dateValue}>
+                  {catDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </Text>
+              </TouchableOpacity>
+
+              {showPicker && (
+                <DateTimePicker
+                  value={catDate}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                  maximumDate={new Date()}
+                  onChange={(_, date) => {
+                    if (Platform.OS === 'android') setShowPicker(false);
+                    if (date) setCatDate(date);
+                  }}
+                  style={{ marginBottom: 12 }}
+                />
+              )}
+
               <View style={s.modalActions}>
                 <TouchableOpacity style={s.cancelBtn} onPress={() => setSelCat(null)}>
                   <Text style={s.cancelText}>Cancelar</Text>
@@ -322,6 +349,13 @@ const s = StyleSheet.create({
     borderRadius: 12, padding: 15, color: colors.text, fontFamily: fonts.medium,
     fontSize: 16, marginBottom: 12,
   },
+  dateRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 12, paddingVertical: 14, paddingHorizontal: 15, marginBottom: 12,
+  },
+  dateLabel: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 14 },
+  dateValue: { color: colors.text, fontFamily: fonts.semibold, fontSize: 14 },
   modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   cancelBtn: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 12, backgroundColor: colors.card },
   cancelText: { color: colors.subtext, fontFamily: fonts.medium },
