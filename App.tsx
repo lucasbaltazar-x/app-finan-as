@@ -7,7 +7,8 @@ import { Text } from 'react-native';
 
 import { FinanceProvider } from './src/context/FinanceContext';
 import HomeScreen from './src/screens/HomeScreen';
-import TransactionsScreen from './src/screens/TransactionsScreen';
+import ChartScreen from './src/screens/ChartScreen';
+import CalendarScreen from './src/screens/CalendarScreen';
 import BudgetGoalsScreen from './src/screens/BudgetGoalsScreen';
 import { colors } from './src/theme';
 
@@ -27,7 +28,8 @@ const navTheme = {
 
 const ICONS: Record<string, string> = {
   Início: '🏠',
-  Transações: '💸',
+  Gráfico: '📊',
+  Calendário: '📅',
   Orçamento: '🎯',
 };
 
@@ -49,7 +51,8 @@ export default function App() {
             })}
           >
             <Tab.Screen name="Início" component={HomeScreen} />
-            <Tab.Screen name="Transações" component={TransactionsScreen} />
+            <Tab.Screen name="Gráfico" component={ChartScreen} />
+            <Tab.Screen name="Calendário" component={CalendarScreen} />
             <Tab.Screen name="Orçamento" component={BudgetGoalsScreen} />
           </Tab.Navigator>
         </NavigationContainer>

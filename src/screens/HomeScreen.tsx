@@ -7,9 +7,6 @@ import { formatCurrency, currentMonthKey } from '../utils/format';
 import { colors } from '../theme';
 import { TransactionType } from '../types';
 
-const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-
 interface QuickShortcut {
   label: string;
   emoji: string;
@@ -29,9 +26,6 @@ const SHORTCUTS: QuickShortcut[] = [
 
 export default function HomeScreen() {
   const { transactions, balance, budgets, addTransaction } = useFinance();
-  const [calendarVisible, setCalendarVisible] = useState(false);
-  const [calendarDate, setCalendarDate] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [quickShortcut, setQuickShortcut] = useState<QuickShortcut | null>(null);
   const [quickAmount, setQuickAmount] = useState('');
 
@@ -55,35 +49,6 @@ export default function HomeScreen() {
     setQuickShortcut(null);
     setQuickAmount('');
   }
-
-  // Calendar
-  const calYear = calendarDate.getFullYear();
-  const calMonth = calendarDate.getMonth();
-  const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
-  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-
-  function dayKey(day: number) {
-    return `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  }
-
-  function expenseForDay(day: number) {
-    return transactions
-      .filter((t) => t.type === 'expense' && t.date.startsWith(dayKey(day)))
-      .reduce((s, t) => s + t.amount, 0);
-  }
-
-  const calendarCells: (number | null)[] = [
-    ...Array(firstDayOfMonth).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
-
-  const today = new Date();
-  const isToday = (day: number) =>
-    day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
-
-  const selectedDayTransactions = selectedDay
-    ? transactions.filter((t) => t.date.startsWith(selectedDay))
-    : [];
 
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
@@ -121,12 +86,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      {/* Botão calendário */}
-      <TouchableOpacity style={s.calendarBtn} onPress={() => setCalendarVisible(true)}>
-        <Text style={s.calendarBtnIcon}>📅</Text>
-        <Text style={s.calendarBtnText}>Ver gastos por dia</Text>
-      </TouchableOpacity>
 
       {/* Orçamentos */}
       <Text style={s.sectionTitle}>Orçamentos do mês</Text>
@@ -177,71 +136,6 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* Modal Calendário */}
-      <Modal visible={calendarVisible} animationType="slide" transparent>
-        <View style={s.modalOverlay}>
-          <View style={s.modalContent}>
-            <View style={s.calHeader}>
-              <TouchableOpacity onPress={() => { setCalendarDate(new Date(calYear, calMonth - 1, 1)); setSelectedDay(null); }}>
-                <Text style={s.calNavBtn}>‹</Text>
-              </TouchableOpacity>
-              <Text style={s.calMonthTitle}>{MONTHS[calMonth]} {calYear}</Text>
-              <TouchableOpacity onPress={() => { setCalendarDate(new Date(calYear, calMonth + 1, 1)); setSelectedDay(null); }}>
-                <Text style={s.calNavBtn}>›</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={s.weekRow}>
-              {WEEKDAYS.map((d) => <Text key={d} style={s.weekDay}>{d}</Text>)}
-            </View>
-
-            <View style={s.calGrid}>
-              {calendarCells.map((day, idx) => {
-                if (!day) return <View key={`e-${idx}`} style={s.calCell} />;
-                const dk = dayKey(day);
-                const dayExp = expenseForDay(day);
-                const isSelected = selectedDay === dk;
-                return (
-                  <TouchableOpacity
-                    key={dk}
-                    style={[s.calCell, isToday(day) && s.calCellToday, isSelected && s.calCellSelected]}
-                    onPress={() => setSelectedDay(isSelected ? null : dk)}
-                  >
-                    <Text style={[s.calDayNum, isToday(day) && s.calDayNumToday, isSelected && s.calDayNumSelected]}>
-                      {day}
-                    </Text>
-                    {dayExp > 0 && <Text style={s.calDayExpense}>{formatCurrency(dayExp)}</Text>}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {selectedDay && (
-              <View style={s.dayDetail}>
-                <Text style={s.dayDetailTitle}>
-                  {new Date(selectedDay + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
-                </Text>
-                {selectedDayTransactions.length === 0
-                  ? <Text style={s.empty}>Nenhuma transação neste dia.</Text>
-                  : selectedDayTransactions.map((t) => (
-                    <View key={t.id} style={s.dayTxRow}>
-                      <Text style={s.dayTxCategory}>{t.category}</Text>
-                      <Text style={[s.dayTxAmount, { color: t.type === 'income' ? colors.income : colors.expense }]}>
-                        {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
-                      </Text>
-                    </View>
-                  ))
-                }
-              </View>
-            )}
-
-            <TouchableOpacity style={s.saveBtn} onPress={() => { setCalendarVisible(false); setSelectedDay(null); }}>
-              <Text style={s.saveText}>Fechar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </ScrollView>
   );
 }
@@ -267,13 +161,6 @@ const s = StyleSheet.create({
   shortcutEmoji: { fontSize: 24, marginBottom: 4 },
   shortcutLabel: { color: colors.text, fontWeight: '600', fontSize: 13 },
   shortcutType: { fontSize: 10, marginTop: 2 },
-  calendarBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: colors.card, borderRadius: 12, padding: 14,
-    marginBottom: 24, borderWidth: 1, borderColor: colors.border,
-  },
-  calendarBtnIcon: { fontSize: 20 },
-  calendarBtnText: { color: colors.primary, fontWeight: '600', fontSize: 15 },
   empty: { color: colors.subtext, fontSize: 13, marginBottom: 8 },
   budgetItem: { marginBottom: 14 },
   budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
@@ -292,23 +179,4 @@ const s = StyleSheet.create({
   cancelText: { color: colors.subtext, fontWeight: '600' },
   saveBtn: { flex: 1, padding: 14, alignItems: 'center', borderRadius: 10, backgroundColor: colors.primary },
   saveText: { color: '#fff', fontWeight: '700' },
-  // Calendar
-  calHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  calNavBtn: { fontSize: 28, color: colors.primary, paddingHorizontal: 10 },
-  calMonthTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
-  weekRow: { flexDirection: 'row', marginBottom: 6 },
-  weekDay: { flex: 1, textAlign: 'center', fontSize: 11, color: colors.subtext, fontWeight: '600' },
-  calGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 },
-  calCell: { width: '14.28%', alignItems: 'center', paddingVertical: 6, borderRadius: 8, marginBottom: 2 },
-  calCellToday: { backgroundColor: colors.primaryLight },
-  calCellSelected: { backgroundColor: colors.primary },
-  calDayNum: { fontSize: 13, fontWeight: '600', color: colors.text },
-  calDayNumToday: { color: colors.primary },
-  calDayNumSelected: { color: '#fff' },
-  calDayExpense: { fontSize: 8, color: colors.expense, marginTop: 1 },
-  dayDetail: { borderTopWidth: 1, borderColor: colors.border, marginTop: 10, paddingTop: 12, marginBottom: 12 },
-  dayDetailTitle: { color: colors.text, fontWeight: '700', fontSize: 14, marginBottom: 8 },
-  dayTxRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderColor: colors.border },
-  dayTxCategory: { color: colors.text, fontSize: 14 },
-  dayTxAmount: { fontWeight: '600', fontSize: 14 },
 });

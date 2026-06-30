@@ -1,0 +1,142 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useFinance } from '../context/FinanceContext';
+import { formatCurrency } from '../utils/format';
+import { colors } from '../theme';
+
+const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+export default function CalendarScreen() {
+  const { transactions } = useFinance();
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+
+  const calYear = calendarDate.getFullYear();
+  const calMonth = calendarDate.getMonth();
+  const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  function dayKey(day: number) {
+    return `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  function totalsForDay(day: number) {
+    const dk = dayKey(day);
+    const dayTx = transactions.filter((t) => t.date.startsWith(dk));
+    const expense = dayTx.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const income = dayTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    return { expense, income, count: dayTx.length };
+  }
+
+  const calendarCells: (number | null)[] = [
+    ...Array(firstDayOfMonth).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
+  const today = new Date();
+  const isToday = (day: number) =>
+    day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+
+  const monthKey = `${calYear}-${String(calMonth + 1).padStart(2, '0')}`;
+  const monthTotalExpense = transactions
+    .filter((t) => t.type === 'expense' && t.date.startsWith(monthKey))
+    .reduce((s, t) => s + t.amount, 0);
+
+  const selectedDayTransactions = selectedDay
+    ? transactions.filter((t) => t.date.startsWith(selectedDay))
+    : [];
+
+  return (
+    <ScrollView style={s.container} contentContainerStyle={s.content}>
+      <View style={s.calHeader}>
+        <TouchableOpacity onPress={() => { setCalendarDate(new Date(calYear, calMonth - 1, 1)); setSelectedDay(null); }}>
+          <Text style={s.calNavBtn}>‹</Text>
+        </TouchableOpacity>
+        <Text style={s.calMonthTitle}>{MONTHS[calMonth]} {calYear}</Text>
+        <TouchableOpacity onPress={() => { setCalendarDate(new Date(calYear, calMonth + 1, 1)); setSelectedDay(null); }}>
+          <Text style={s.calNavBtn}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={s.monthTotal}>Total de gastos no mês: <Text style={{ color: colors.expense, fontWeight: '700' }}>{formatCurrency(monthTotalExpense)}</Text></Text>
+
+      <View style={s.weekRow}>
+        {WEEKDAYS.map((d) => <Text key={d} style={s.weekDay}>{d}</Text>)}
+      </View>
+
+      <View style={s.calGrid}>
+        {calendarCells.map((day, idx) => {
+          if (!day) return <View key={`e-${idx}`} style={s.calCell} />;
+          const dk = dayKey(day);
+          const { expense, income, count } = totalsForDay(day);
+          const isSelected = selectedDay === dk;
+          return (
+            <TouchableOpacity
+              key={dk}
+              style={[s.calCell, isToday(day) && s.calCellToday, isSelected && s.calCellSelected]}
+              onPress={() => setSelectedDay(isSelected ? null : dk)}
+            >
+              <Text style={[s.calDayNum, isToday(day) && s.calDayNumToday, isSelected && s.calDayNumSelected]}>
+                {day}
+              </Text>
+              {expense > 0 && <Text style={s.calDayExpense}>{formatCurrency(expense)}</Text>}
+              {income > 0 && <Text style={s.calDayIncome}>{formatCurrency(income)}</Text>}
+              {count > 0 && <View style={[s.dot, isSelected && { backgroundColor: '#fff' }]} />}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {selectedDay && (
+        <View style={s.dayDetail}>
+          <Text style={s.dayDetailTitle}>
+            {new Date(selectedDay + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', weekday: 'long' })}
+          </Text>
+          {selectedDayTransactions.length === 0
+            ? <Text style={s.empty}>Nenhuma transação neste dia.</Text>
+            : selectedDayTransactions.map((t) => (
+              <View key={t.id} style={s.dayTxRow}>
+                <View>
+                  <Text style={s.dayTxCategory}>{t.category}</Text>
+                  {!!t.description && <Text style={s.dayTxDesc}>{t.description}</Text>}
+                </View>
+                <Text style={[s.dayTxAmount, { color: t.type === 'income' ? colors.income : colors.expense }]}>
+                  {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                </Text>
+              </View>
+            ))
+          }
+        </View>
+      )}
+    </ScrollView>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: 20, paddingBottom: 40 },
+  calHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  calNavBtn: { fontSize: 28, color: colors.primary, paddingHorizontal: 10 },
+  calMonthTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  monthTotal: { color: colors.subtext, fontSize: 13, marginBottom: 16 },
+  weekRow: { flexDirection: 'row', marginBottom: 6 },
+  weekDay: { flex: 1, textAlign: 'center', fontSize: 11, color: colors.subtext, fontWeight: '600' },
+  calGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 },
+  calCell: { width: '14.28%', alignItems: 'center', paddingVertical: 8, borderRadius: 8, marginBottom: 4 },
+  calCellToday: { backgroundColor: colors.primaryLight },
+  calCellSelected: { backgroundColor: colors.primary },
+  calDayNum: { fontSize: 13, fontWeight: '600', color: colors.text },
+  calDayNumToday: { color: colors.primary },
+  calDayNumSelected: { color: '#fff' },
+  calDayExpense: { fontSize: 8, color: colors.expense, marginTop: 1 },
+  calDayIncome: { fontSize: 8, color: colors.income, marginTop: 1 },
+  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: colors.subtext, marginTop: 2 },
+  dayDetail: { borderTopWidth: 1, borderColor: colors.border, marginTop: 10, paddingTop: 16 },
+  dayDetailTitle: { color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 10, textTransform: 'capitalize' },
+  empty: { color: colors.subtext, fontSize: 13 },
+  dayTxRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderColor: colors.border },
+  dayTxCategory: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  dayTxDesc: { color: colors.subtext, fontSize: 12, marginTop: 2 },
+  dayTxAmount: { fontWeight: '700', fontSize: 14 },
+});

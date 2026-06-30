@@ -1,17 +1,41 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/format';
 import { TransactionType } from '../types';
 import { colors } from '../theme';
 
-export default function TransactionsScreen() {
+const DAYS_WINDOW = 14;
+
+function isoDay(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+export default function ChartScreen() {
   const { transactions, addTransaction, removeTransaction } = useFinance();
   const [modalVisible, setModalVisible] = useState(false);
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
+
+  const days = useMemo(() => {
+    const arr: { key: string; label: string; total: number }[] = [];
+    for (let i = DAYS_WINDOW - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = isoDay(d);
+      const total = transactions
+        .filter((t) => t.type === 'expense' && t.date.startsWith(key))
+        .reduce((s, t) => s + t.amount, 0);
+      arr.push({ key, label: String(d.getDate()), total });
+    }
+    return arr;
+  }, [transactions]);
+
+  const maxTotal = Math.max(...days.map((d) => d.total), 1);
+  const periodTotal = days.reduce((s, d) => s + d.total, 0);
+  const avgDaily = periodTotal / DAYS_WINDOW;
 
   function resetForm() {
     setType('expense');
@@ -28,12 +52,43 @@ export default function TransactionsScreen() {
     setModalVisible(false);
   }
 
+  const recent = transactions.slice(0, 30);
+
   return (
     <View style={s.container}>
       <FlatList
-        data={transactions}
+        data={recent}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        ListHeaderComponent={
+          <View>
+            <View style={s.summaryCard}>
+              <Text style={s.summaryLabel}>Gasto médio diário (últimos {DAYS_WINDOW} dias)</Text>
+              <Text style={s.summaryValue}>{formatCurrency(avgDaily)}</Text>
+            </View>
+
+            <Text style={s.sectionTitle}>Evolução dos gastos</Text>
+            <View style={s.chartCard}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={s.chartRow}>
+                  {days.map((d) => {
+                    const heightPct = d.total > 0 ? Math.max((d.total / maxTotal) * 100, 6) : 2;
+                    return (
+                      <View key={d.key} style={s.barCol}>
+                        <View style={s.barTrack}>
+                          <View style={[s.bar, { height: `${heightPct}%` }]} />
+                        </View>
+                        <Text style={s.barLabel}>{d.label}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            </View>
+
+            <Text style={s.sectionTitle}>Últimas transações</Text>
+          </View>
+        }
         ListEmptyComponent={<Text style={s.empty}>Nenhuma transação ainda.{'\n'}Use os atalhos na tela Início ou o botão + abaixo.</Text>}
         renderItem={({ item }) => (
           <TouchableOpacity style={s.item} onLongPress={() => removeTransaction(item.id)}>
@@ -59,16 +114,10 @@ export default function TransactionsScreen() {
           <View style={s.modalContent}>
             <Text style={s.modalTitle}>Nova transação</Text>
             <View style={s.typeRow}>
-              <TouchableOpacity
-                style={[s.typeBtn, type === 'expense' && s.typeBtnExpense]}
-                onPress={() => setType('expense')}
-              >
+              <TouchableOpacity style={[s.typeBtn, type === 'expense' && s.typeBtnExpense]} onPress={() => setType('expense')}>
                 <Text style={[s.typeText, type === 'expense' && { color: colors.expense, fontWeight: '700' }]}>Despesa</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.typeBtn, type === 'income' && s.typeBtnIncome]}
-                onPress={() => setType('income')}
-              >
+              <TouchableOpacity style={[s.typeBtn, type === 'income' && s.typeBtnIncome]} onPress={() => setType('income')}>
                 <Text style={[s.typeText, type === 'income' && { color: colors.income, fontWeight: '700' }]}>Receita</Text>
               </TouchableOpacity>
             </View>
@@ -92,7 +141,17 @@ export default function TransactionsScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  empty: { color: colors.subtext, textAlign: 'center', marginTop: 60, lineHeight: 22 },
+  summaryCard: { backgroundColor: colors.surface, borderRadius: 16, padding: 18, marginBottom: 20 },
+  summaryLabel: { color: colors.subtext, fontSize: 12, marginBottom: 4 },
+  summaryValue: { color: colors.expense, fontSize: 26, fontWeight: '800' },
+  sectionTitle: { color: colors.text, fontSize: 15, fontWeight: '700', marginBottom: 12 },
+  chartCard: { backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: colors.border },
+  chartRow: { flexDirection: 'row', alignItems: 'flex-end', height: 140, gap: 10 },
+  barCol: { alignItems: 'center', width: 24 },
+  barTrack: { width: 14, height: 110, justifyContent: 'flex-end', backgroundColor: colors.border, borderRadius: 7, overflow: 'hidden' },
+  bar: { width: 14, backgroundColor: colors.primary, borderRadius: 7 },
+  barLabel: { color: colors.subtext, fontSize: 9, marginTop: 6 },
+  empty: { color: colors.subtext, textAlign: 'center', marginTop: 20, lineHeight: 22 },
   item: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 12, padding: 14, marginBottom: 10, gap: 12 },
   itemDot: { width: 4, height: 40, borderRadius: 2 },
   itemCategory: { color: colors.text, fontWeight: '600', fontSize: 15 },
