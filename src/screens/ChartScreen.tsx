@@ -287,7 +287,7 @@ export default function ChartScreen() {
           </Text>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity style={s.item} onLongPress={() => removeTransaction(item.id)}>
+          <View style={s.item}>
             <View style={[s.itemDot, { backgroundColor: item.type === 'income' ? colors.income : colors.expense }]} />
             <View style={{ flex: 1 }}>
               <Text style={s.itemCategory}>{item.category}</Text>
@@ -297,7 +297,10 @@ export default function ChartScreen() {
             <Text style={[s.itemAmount, { color: item.type === 'income' ? colors.income : colors.expense }]}>
               {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
             </Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={s.deleteBtn} onPress={() => removeTransaction(item.id)}>
+              <Text style={s.deleteBtnText}>×</Text>
+            </TouchableOpacity>
+          </View>
         )}
       />
 
@@ -398,7 +401,9 @@ const s = StyleSheet.create({
 
   // list
   empty: { color: colors.subtext, fontFamily: fonts.regular, textAlign: 'center', marginTop: 10, lineHeight: 22 },
-  item: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 14, padding: 16, marginBottom: 10, gap: 12 },
+  item: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, marginBottom: 10, gap: 12 },
+  deleteBtn: { padding: 6, marginLeft: 4 },
+  deleteBtnText: { color: colors.subtext, fontSize: 20, lineHeight: 22 },
   itemDot: { width: 3, height: 36, borderRadius: 2 },
   itemCategory: { color: colors.text, fontFamily: fonts.medium, fontSize: 14 },
   itemDesc: { color: colors.subtext, fontSize: 12, fontFamily: fonts.regular, marginTop: 2 },

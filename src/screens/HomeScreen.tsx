@@ -15,22 +15,31 @@ interface QuickShortcut {
 }
 
 const SHORTCUTS: QuickShortcut[] = [
-  { label: 'Salário', category: 'Salário', type: 'income' },
-  { label: 'Mercado', category: 'Supermercado', type: 'expense' },
-  { label: 'Transporte', category: 'Transporte', type: 'expense' },
-  { label: 'Aluguel', category: 'Aluguel', type: 'expense' },
-  { label: 'Restaurante', category: 'Alimentação', type: 'expense' },
-  { label: 'Academia', category: 'Academia', type: 'expense' },
+  { label: 'Salário',     category: 'Salário',      type: 'income' },
+  { label: 'Mercado',     category: 'Supermercado', type: 'expense' },
+  { label: 'Transporte',  category: 'Transporte',   type: 'expense' },
+  { label: 'Aluguel',     category: 'Aluguel',      type: 'expense' },
+  { label: 'Restaurante', category: 'Alimentação',  type: 'expense' },
+  { label: 'Academia',    category: 'Academia',     type: 'expense' },
 ];
 
 export default function HomeScreen() {
-  const { transactions, balance, budgets, addTransaction } = useFinance();
+  const { transactions, balance, budgets, addTransaction, removeTransaction } = useFinance();
+
+  // modal lançamento rápido
   const [quickShortcut, setQuickShortcut] = useState<QuickShortcut | null>(null);
   const [quickAmount, setQuickAmount] = useState('');
 
+  // modal novo lançamento personalizado
+  const [newModal, setNewModal] = useState(false);
+  const [newType, setNewType] = useState<TransactionType>('expense');
+  const [newName, setNewName] = useState('');
+  const [newAmount, setNewAmount] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+
   const monthKey = currentMonthKey();
   const monthTransactions = transactions.filter((t) => t.date.startsWith(monthKey));
-  const income = monthTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const income  = monthTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const expense = monthTransactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const monthBudgets = budgets.filter((b) => b.month === monthKey);
 
@@ -49,8 +58,34 @@ export default function HomeScreen() {
     setQuickAmount('');
   }
 
+  function resetNew() {
+    setNewType('expense');
+    setNewName('');
+    setNewAmount('');
+    setNewDesc('');
+  }
+
+  function handleNewSave() {
+    const parsed = parseFloat(newAmount.replace(',', '.'));
+    if (!parsed || parsed <= 0 || !newName.trim()) return;
+    addTransaction({
+      type: newType,
+      amount: parsed,
+      category: newName.trim(),
+      description: newDesc.trim(),
+      date: new Date().toISOString(),
+    });
+    resetNew();
+    setNewModal(false);
+  }
+
+  // últimas 5 transações para exibir na home
+  const recent = transactions.slice(0, 5);
+
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
+
+      {/* ── Saldo ── */}
       <View style={s.balanceCard}>
         <Text style={s.balanceLabel}>SALDO TOTAL</Text>
         <Text style={[s.balance, balance < 0 && s.negative]}>{formatCurrency(balance)}</Text>
@@ -67,6 +102,13 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* ── Novo lançamento ── */}
+      <TouchableOpacity style={s.newBtn} onPress={() => setNewModal(true)}>
+        <View style={s.newBtnPlus}><Text style={s.newBtnPlusText}>+</Text></View>
+        <Text style={s.newBtnLabel}>Novo lançamento</Text>
+      </TouchableOpacity>
+
+      {/* ── Lançamentos rápidos ── */}
       <Text style={s.sectionTitle}>Lançamento rápido</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.shortcutsScroll}>
         {SHORTCUTS.map((sc) => (
@@ -84,31 +126,55 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
 
-      <Text style={s.sectionTitle}>Orçamentos do mês</Text>
-      {monthBudgets.length === 0 && <Text style={s.empty}>Nenhum orçamento definido para este mês.</Text>}
-      {monthBudgets.map((b) => {
-        const spent = monthTransactions
-          .filter((t) => t.type === 'expense' && t.category === b.category)
-          .reduce((sum, t) => sum + t.amount, 0);
-        const pct = b.limit > 0 ? Math.min(spent / b.limit, 1) : 0;
-        return (
-          <View key={b.id} style={s.budgetItem}>
-            <View style={s.budgetHeader}>
-              <Text style={s.budgetCategory}>{b.category}</Text>
-              <Text style={s.budgetAmounts}>{formatCurrency(spent)} / {formatCurrency(b.limit)}</Text>
-            </View>
-            <View style={s.progressBg}>
-              <View style={[s.progressFill, { width: `${pct * 100}%`, backgroundColor: pct >= 1 ? colors.expense : colors.primary }]} />
-            </View>
-          </View>
-        );
-      })}
+      {/* ── Orçamentos do mês ── */}
+      {monthBudgets.length > 0 && (
+        <>
+          <Text style={s.sectionTitle}>Orçamentos do mês</Text>
+          {monthBudgets.map((b) => {
+            const spent = monthTransactions
+              .filter((t) => t.type === 'expense' && t.category === b.category)
+              .reduce((sum, t) => sum + t.amount, 0);
+            const pct = b.limit > 0 ? Math.min(spent / b.limit, 1) : 0;
+            return (
+              <View key={b.id} style={s.budgetItem}>
+                <View style={s.budgetHeader}>
+                  <Text style={s.budgetCategory}>{b.category}</Text>
+                  <Text style={s.budgetAmounts}>{formatCurrency(spent)} / {formatCurrency(b.limit)}</Text>
+                </View>
+                <View style={s.progressBg}>
+                  <View style={[s.progressFill, { width: `${pct * 100}%`, backgroundColor: pct >= 1 ? colors.expense : colors.primary }]} />
+                </View>
+              </View>
+            );
+          })}
+        </>
+      )}
 
+      {/* ── Últimas transações ── */}
+      {recent.length > 0 && (
+        <>
+          <Text style={[s.sectionTitle, { marginTop: 8 }]}>Últimas transações</Text>
+          {recent.map((t) => (
+            <View key={t.id} style={s.txRow}>
+              <View style={[s.txDot, { backgroundColor: t.type === 'income' ? colors.income : colors.expense }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={s.txCategory}>{t.category}</Text>
+                {!!t.description && <Text style={s.txDesc}>{t.description}</Text>}
+              </View>
+              <Text style={[s.txAmount, { color: t.type === 'income' ? colors.income : colors.expense }]}>
+                {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+              </Text>
+              <TouchableOpacity style={s.txDelete} onPress={() => removeTransaction(t.id)}>
+                <Text style={s.txDeleteText}>×</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </>
+      )}
+
+      {/* ── Modal lançamento rápido ── */}
       <Modal visible={!!quickShortcut} animationType="slide" transparent>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={s.modalOverlay}>
             <View style={s.modalContent}>
               <Text style={s.modalTitle}>{quickShortcut?.label}</Text>
@@ -146,6 +212,86 @@ export default function HomeScreen() {
           </InputAccessoryView>
         )}
       </Modal>
+
+      {/* ── Modal novo lançamento personalizado ── */}
+      <Modal visible={newModal} animationType="slide" transparent>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={s.modalOverlay}>
+            <View style={s.modalContent}>
+              <Text style={s.modalTitle}>Novo lançamento</Text>
+
+              {/* toggle tipo */}
+              <View style={s.typeRow}>
+                <TouchableOpacity
+                  style={[s.typeBtn, newType === 'expense' && s.typeBtnExpense]}
+                  onPress={() => setNewType('expense')}
+                >
+                  <Text style={[s.typeText, newType === 'expense' && { color: colors.expense, fontFamily: fonts.semibold }]}>
+                    Despesa
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.typeBtn, newType === 'income' && s.typeBtnIncome]}
+                  onPress={() => setNewType('income')}
+                >
+                  <Text style={[s.typeText, newType === 'income' && { color: colors.income, fontFamily: fonts.semibold }]}>
+                    Receita
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <TextInput
+                style={s.input}
+                placeholder="Nome (ex: Conta de luz)"
+                placeholderTextColor={colors.placeholder}
+                value={newName}
+                onChangeText={setNewName}
+                inputAccessoryViewID="newLanAccessory"
+                returnKeyType="next"
+              />
+              <TextInput
+                style={s.input}
+                placeholder="Valor (ex: 150.00)"
+                placeholderTextColor={colors.placeholder}
+                keyboardType="decimal-pad"
+                value={newAmount}
+                onChangeText={setNewAmount}
+                inputAccessoryViewID="newLanAccessory"
+                returnKeyType="done"
+              />
+              <TextInput
+                style={s.input}
+                placeholder="Observação (opcional)"
+                placeholderTextColor={colors.placeholder}
+                value={newDesc}
+                onChangeText={setNewDesc}
+                inputAccessoryViewID="newLanAccessory"
+                returnKeyType="done"
+                onSubmitEditing={handleNewSave}
+              />
+
+              <View style={s.modalActions}>
+                <TouchableOpacity style={s.cancelBtn} onPress={() => { resetNew(); setNewModal(false); }}>
+                  <Text style={s.cancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.saveBtn} onPress={handleNewSave}>
+                  <Text style={s.saveText}>Lançar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+        {Platform.OS === 'ios' && (
+          <InputAccessoryView nativeID="newLanAccessory">
+            <View style={s.accessoryBar}>
+              <TouchableOpacity onPress={Keyboard.dismiss}>
+                <Text style={s.accessoryText}>Concluir</Text>
+              </TouchableOpacity>
+            </View>
+          </InputAccessoryView>
+        )}
+      </Modal>
+
     </ScrollView>
   );
 }
@@ -153,7 +299,9 @@ export default function HomeScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, paddingBottom: 40 },
-  balanceCard: { backgroundColor: colors.surface, borderRadius: 20, padding: 24, marginBottom: 28 },
+
+  // saldo
+  balanceCard: { backgroundColor: colors.surface, borderRadius: 20, padding: 24, marginBottom: 20 },
   balanceLabel: { color: colors.subtext, fontSize: 11, fontFamily: fonts.semibold, letterSpacing: 1, marginBottom: 6 },
   balance: { fontSize: 38, fontFamily: fonts.bold, color: colors.text, marginBottom: 20, letterSpacing: -0.5 },
   negative: { color: colors.expense },
@@ -162,15 +310,28 @@ const s = StyleSheet.create({
   monthStatLabel: { color: colors.subtext, fontSize: 12, fontFamily: fonts.regular, marginBottom: 3 },
   monthStatValue: { fontSize: 16, fontFamily: fonts.semibold },
   divider: { width: 1, height: 32, backgroundColor: colors.border, marginHorizontal: 16 },
+
+  // novo lançamento
+  newBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: colors.card, borderRadius: 14,
+    paddingVertical: 14, paddingHorizontal: 18,
+    marginBottom: 24, borderWidth: 1, borderColor: colors.border,
+  },
+  newBtnPlus: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
+  },
+  newBtnPlusText: { color: '#fff', fontSize: 20, lineHeight: 22, fontFamily: fonts.regular },
+  newBtnLabel: { color: colors.text, fontFamily: fonts.medium, fontSize: 15 },
+
   sectionTitle: { color: colors.text, fontSize: 15, fontFamily: fonts.semibold, marginBottom: 14 },
   shortcutsScroll: { marginBottom: 28 },
-  shortcutBtn: {
-    backgroundColor: colors.card, borderRadius: 14, paddingVertical: 16, paddingHorizontal: 16, marginRight: 10,
-    minWidth: 110,
-  },
+  shortcutBtn: { backgroundColor: colors.card, borderRadius: 14, paddingVertical: 16, paddingHorizontal: 16, marginRight: 10, minWidth: 110 },
   shortcutIndicator: { width: 8, height: 8, borderRadius: 4, marginBottom: 10 },
   shortcutLabel: { color: colors.text, fontFamily: fonts.medium, fontSize: 13 },
   shortcutType: { fontSize: 11, fontFamily: fonts.regular, marginTop: 3 },
+
   empty: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginBottom: 8 },
   budgetItem: { marginBottom: 16 },
   budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
@@ -178,12 +339,36 @@ const s = StyleSheet.create({
   budgetAmounts: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular },
   progressBg: { height: 5, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' },
   progressFill: { height: 5, borderRadius: 3 },
+
+  // lista de transações
+  txRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: colors.card, borderRadius: 14,
+    paddingVertical: 12, paddingHorizontal: 14, marginBottom: 8,
+  },
+  txDot: { width: 3, height: 32, borderRadius: 2 },
+  txCategory: { color: colors.text, fontFamily: fonts.medium, fontSize: 14 },
+  txDesc: { color: colors.subtext, fontSize: 12, fontFamily: fonts.regular, marginTop: 2 },
+  txAmount: { fontFamily: fonts.semibold, fontSize: 14 },
+  txDelete: { padding: 6, marginLeft: 4 },
+  txDeleteText: { color: colors.subtext, fontSize: 20, lineHeight: 22 },
+
+  // modais
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28 },
   modalTitle: { color: colors.text, fontSize: 20, fontFamily: fonts.semibold, marginBottom: 4 },
   modalSubtitle: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginBottom: 20 },
-  input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 16, color: colors.text, fontSize: 18, fontFamily: fonts.medium, marginBottom: 20 },
-  modalActions: { flexDirection: 'row', gap: 10 },
+  typeRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  typeBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: colors.card, alignItems: 'center' },
+  typeBtnExpense: { backgroundColor: colors.expenseSubtle },
+  typeBtnIncome: { backgroundColor: colors.incomeSubtle },
+  typeText: { color: colors.subtext, fontFamily: fonts.medium },
+  input: {
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 12, padding: 15, color: colors.text, fontFamily: fonts.medium,
+    fontSize: 16, marginBottom: 12,
+  },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   cancelBtn: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 12, backgroundColor: colors.card },
   cancelText: { color: colors.subtext, fontFamily: fonts.medium },
   saveBtn: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 12, backgroundColor: colors.primary },
