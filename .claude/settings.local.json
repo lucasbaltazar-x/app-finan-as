@@ -12,7 +12,11 @@
       "Bash(rmdir app-financas *)",
       "Bash(git commit *)",
       "Bash(git branch *)",
-      "Bash(git remote *)"
+      "Bash(git remote *)",
+      "Bash(git config *)",
+      "Bash(git push *)",
+      "Bash(npx expo *)",
+      "Bash(npx tsc *)"
     ]
   }
 }
