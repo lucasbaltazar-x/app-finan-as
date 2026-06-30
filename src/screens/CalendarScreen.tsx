@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/format';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -59,7 +59,7 @@ export default function CalendarScreen() {
         </TouchableOpacity>
       </View>
 
-      <Text style={s.monthTotal}>Total de gastos no mês: <Text style={{ color: colors.expense, fontWeight: '700' }}>{formatCurrency(monthTotalExpense)}</Text></Text>
+      <Text style={s.monthTotal}>Total de gastos no mês: <Text style={{ color: colors.expense, fontFamily: fonts.semibold }}>{formatCurrency(monthTotalExpense)}</Text></Text>
 
       <View style={s.weekRow}>
         {WEEKDAYS.map((d) => <Text key={d} style={s.weekDay}>{d}</Text>)}
@@ -118,25 +118,25 @@ const s = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
   calHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   calNavBtn: { fontSize: 28, color: colors.primary, paddingHorizontal: 10 },
-  calMonthTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  monthTotal: { color: colors.subtext, fontSize: 13, marginBottom: 16 },
+  calMonthTitle: { color: colors.text, fontSize: 18, fontFamily: fonts.semibold },
+  monthTotal: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginBottom: 16 },
   weekRow: { flexDirection: 'row', marginBottom: 6 },
-  weekDay: { flex: 1, textAlign: 'center', fontSize: 11, color: colors.subtext, fontWeight: '600' },
+  weekDay: { flex: 1, textAlign: 'center', fontSize: 11, color: colors.subtext, fontFamily: fonts.medium },
   calGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 },
   calCell: { width: '14.28%', alignItems: 'center', paddingVertical: 8, borderRadius: 8, marginBottom: 4 },
   calCellToday: { backgroundColor: colors.primaryLight },
   calCellSelected: { backgroundColor: colors.primary },
-  calDayNum: { fontSize: 13, fontWeight: '600', color: colors.text },
+  calDayNum: { fontSize: 13, fontFamily: fonts.medium, color: colors.text },
   calDayNumToday: { color: colors.primary },
   calDayNumSelected: { color: '#fff' },
-  calDayExpense: { fontSize: 8, color: colors.expense, marginTop: 1 },
-  calDayIncome: { fontSize: 8, color: colors.income, marginTop: 1 },
+  calDayExpense: { fontSize: 8, color: colors.expense, fontFamily: fonts.regular, marginTop: 1 },
+  calDayIncome: { fontSize: 8, color: colors.income, fontFamily: fonts.regular, marginTop: 1 },
   dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: colors.subtext, marginTop: 2 },
   dayDetail: { borderTopWidth: 1, borderColor: colors.border, marginTop: 10, paddingTop: 16 },
-  dayDetailTitle: { color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 10, textTransform: 'capitalize' },
-  empty: { color: colors.subtext, fontSize: 13 },
+  dayDetailTitle: { color: colors.text, fontFamily: fonts.semibold, fontSize: 15, marginBottom: 10, textTransform: 'capitalize' },
+  empty: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular },
   dayTxRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderColor: colors.border },
-  dayTxCategory: { color: colors.text, fontSize: 14, fontWeight: '600' },
-  dayTxDesc: { color: colors.subtext, fontSize: 12, marginTop: 2 },
-  dayTxAmount: { fontWeight: '700', fontSize: 14 },
+  dayTxCategory: { color: colors.text, fontSize: 14, fontFamily: fonts.medium },
+  dayTxDesc: { color: colors.subtext, fontSize: 12, fontFamily: fonts.regular, marginTop: 2 },
+  dayTxAmount: { fontFamily: fonts.semibold, fontSize: 14 },
 });

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, currentMonthKey } from '../utils/format';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 export default function BudgetGoalsScreen() {
   const { budgets, addBudget, removeBudget, goals, addGoal, updateGoalSavedAmount, removeGoal } = useFinance();
@@ -47,7 +47,7 @@ export default function BudgetGoalsScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Text style={s.listItemValue}>{formatCurrency(b.limit)}</Text>
             <TouchableOpacity onPress={() => removeBudget(b.id)}>
-              <Text style={s.removeText}>✕</Text>
+              <Text style={s.removeText}>×</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -69,7 +69,7 @@ export default function BudgetGoalsScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={s.listItemTitle}>{g.name}</Text>
               <TouchableOpacity onPress={() => removeGoal(g.id)}>
-                <Text style={s.removeText}>✕</Text>
+                <Text style={s.removeText}>×</Text>
               </TouchableOpacity>
             </View>
             <Text style={s.goalAmounts}>{formatCurrency(g.savedAmount)} / {formatCurrency(g.targetAmount)}</Text>
@@ -94,24 +94,24 @@ export default function BudgetGoalsScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  sectionTitle: { color: colors.text, fontSize: 15, fontWeight: '700', marginBottom: 12 },
+  sectionTitle: { color: colors.text, fontSize: 15, fontFamily: fonts.semibold, marginBottom: 12 },
   formRow: { flexDirection: 'row', gap: 8, marginBottom: 14, alignItems: 'center' },
-  input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, color: colors.text },
+  input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, color: colors.text, fontFamily: fonts.regular },
   addBtn: { width: 42, height: 42, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  addBtnText: { color: '#fff', fontSize: 22, lineHeight: 24 },
-  empty: { color: colors.subtext, fontSize: 13, marginBottom: 10 },
+  addBtnText: { color: '#fff', fontSize: 22, lineHeight: 24, fontFamily: fonts.regular },
+  empty: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginBottom: 10 },
   listItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.card, borderRadius: 12, padding: 14, marginBottom: 8 },
-  listItemTitle: { color: colors.text, fontWeight: '600', fontSize: 15 },
-  listItemValue: { color: colors.subtext },
-  removeText: { color: colors.expense, fontSize: 14, fontWeight: '700' },
+  listItemTitle: { color: colors.text, fontFamily: fonts.medium, fontSize: 15 },
+  listItemValue: { color: colors.subtext, fontFamily: fonts.regular },
+  removeText: { color: colors.expense, fontSize: 16, fontFamily: fonts.medium },
   goalItem: { backgroundColor: colors.card, borderRadius: 12, padding: 16, marginBottom: 12 },
-  goalAmounts: { color: colors.subtext, fontSize: 13, marginTop: 8, marginBottom: 8 },
+  goalAmounts: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginTop: 8, marginBottom: 8 },
   progressBg: { height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden' },
   progressFill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
-  pctText: { color: colors.primary, fontSize: 11, fontWeight: '600', marginTop: 4, marginBottom: 10 },
+  pctText: { color: colors.primary, fontSize: 11, fontFamily: fonts.medium, marginTop: 4, marginBottom: 10 },
   goalActions: { flexDirection: 'row', gap: 8 },
   goalActionBtnMinus: { flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.expenseSubtle, alignItems: 'center', borderWidth: 1, borderColor: colors.expense },
   goalActionBtnPlus: { flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.incomeSubtle, alignItems: 'center', borderWidth: 1, borderColor: colors.income },
-  goalActionTextMinus: { color: colors.expense, fontWeight: '700' },
-  goalActionTextPlus: { color: colors.income, fontWeight: '700' },
+  goalActionTextMinus: { color: colors.expense, fontFamily: fonts.semibold },
+  goalActionTextPlus: { color: colors.income, fontFamily: fonts.semibold },
 });
