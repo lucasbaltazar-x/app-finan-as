@@ -8,29 +8,9 @@ import { formatCurrency, currentMonthKey } from '../utils/format';
 import { colors, fonts } from '../theme';
 import { TransactionType } from '../types';
 
-interface QuickShortcut {
-  label: string;
-  category: string;
-  type: TransactionType;
-}
-
-const SHORTCUTS: QuickShortcut[] = [
-  { label: 'Salário',     category: 'Salário',      type: 'income' },
-  { label: 'Mercado',     category: 'Supermercado', type: 'expense' },
-  { label: 'Transporte',  category: 'Transporte',   type: 'expense' },
-  { label: 'Aluguel',     category: 'Aluguel',      type: 'expense' },
-  { label: 'Restaurante', category: 'Alimentação',  type: 'expense' },
-  { label: 'Academia',    category: 'Academia',     type: 'expense' },
-];
-
 export default function HomeScreen() {
   const { transactions, balance, budgets, addTransaction, removeTransaction } = useFinance();
 
-  // modal lançamento rápido
-  const [quickShortcut, setQuickShortcut] = useState<QuickShortcut | null>(null);
-  const [quickAmount, setQuickAmount] = useState('');
-
-  // modal novo lançamento personalizado
   const [newModal, setNewModal] = useState(false);
   const [newType, setNewType] = useState<TransactionType>('expense');
   const [newName, setNewName] = useState('');
@@ -42,21 +22,6 @@ export default function HomeScreen() {
   const income  = monthTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const expense = monthTransactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const monthBudgets = budgets.filter((b) => b.month === monthKey);
-
-  function handleQuickSave() {
-    if (!quickShortcut) return;
-    const parsed = parseFloat(quickAmount.replace(',', '.'));
-    if (!parsed || parsed <= 0) return;
-    addTransaction({
-      type: quickShortcut.type,
-      amount: parsed,
-      category: quickShortcut.category,
-      description: '',
-      date: new Date().toISOString(),
-    });
-    setQuickShortcut(null);
-    setQuickAmount('');
-  }
 
   function resetNew() {
     setNewType('expense');
@@ -79,7 +44,6 @@ export default function HomeScreen() {
     setNewModal(false);
   }
 
-  // últimas 5 transações para exibir na home
   const recent = transactions.slice(0, 5);
 
   return (
@@ -108,24 +72,6 @@ export default function HomeScreen() {
         <Text style={s.newBtnLabel}>Novo lançamento</Text>
       </TouchableOpacity>
 
-      {/* ── Lançamentos rápidos ── */}
-      <Text style={s.sectionTitle}>Lançamento rápido</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.shortcutsScroll}>
-        {SHORTCUTS.map((sc) => (
-          <TouchableOpacity
-            key={sc.label}
-            style={s.shortcutBtn}
-            onPress={() => { setQuickShortcut(sc); setQuickAmount(''); }}
-          >
-            <View style={[s.shortcutIndicator, { backgroundColor: sc.type === 'income' ? colors.income : colors.expense }]} />
-            <Text style={s.shortcutLabel}>{sc.label}</Text>
-            <Text style={[s.shortcutType, { color: sc.type === 'income' ? colors.income : colors.expense }]}>
-              {sc.type === 'income' ? '+ receita' : '− despesa'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
       {/* ── Orçamentos do mês ── */}
       {monthBudgets.length > 0 && (
         <>
@@ -153,7 +99,7 @@ export default function HomeScreen() {
       {/* ── Últimas transações ── */}
       {recent.length > 0 && (
         <>
-          <Text style={[s.sectionTitle, { marginTop: 8 }]}>Últimas transações</Text>
+          <Text style={s.sectionTitle}>Últimas transações</Text>
           {recent.map((t) => (
             <View key={t.id} style={s.txRow}>
               <View style={[s.txDot, { backgroundColor: t.type === 'income' ? colors.income : colors.expense }]} />
@@ -172,55 +118,13 @@ export default function HomeScreen() {
         </>
       )}
 
-      {/* ── Modal lançamento rápido ── */}
-      <Modal visible={!!quickShortcut} animationType="slide" transparent>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={s.modalOverlay}>
-            <View style={s.modalContent}>
-              <Text style={s.modalTitle}>{quickShortcut?.label}</Text>
-              <Text style={s.modalSubtitle}>{quickShortcut?.category}</Text>
-              <TextInput
-                style={s.input}
-                placeholder="Valor (ex: 150.00)"
-                placeholderTextColor={colors.placeholder}
-                keyboardType="decimal-pad"
-                value={quickAmount}
-                onChangeText={setQuickAmount}
-                autoFocus
-                inputAccessoryViewID="quickAmountAccessory"
-                returnKeyType="done"
-                onSubmitEditing={handleQuickSave}
-              />
-              <View style={s.modalActions}>
-                <TouchableOpacity style={s.cancelBtn} onPress={() => setQuickShortcut(null)}>
-                  <Text style={s.cancelText}>Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={s.saveBtn} onPress={handleQuickSave}>
-                  <Text style={s.saveText}>Lançar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-        {Platform.OS === 'ios' && (
-          <InputAccessoryView nativeID="quickAmountAccessory">
-            <View style={s.accessoryBar}>
-              <TouchableOpacity onPress={Keyboard.dismiss}>
-                <Text style={s.accessoryText}>Concluir</Text>
-              </TouchableOpacity>
-            </View>
-          </InputAccessoryView>
-        )}
-      </Modal>
-
-      {/* ── Modal novo lançamento personalizado ── */}
+      {/* ── Modal novo lançamento ── */}
       <Modal visible={newModal} animationType="slide" transparent>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={s.modalOverlay}>
             <View style={s.modalContent}>
               <Text style={s.modalTitle}>Novo lançamento</Text>
 
-              {/* toggle tipo */}
               <View style={s.typeRow}>
                 <TouchableOpacity
                   style={[s.typeBtn, newType === 'expense' && s.typeBtnExpense]}
@@ -300,7 +204,6 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, paddingBottom: 40 },
 
-  // saldo
   balanceCard: { backgroundColor: colors.surface, borderRadius: 20, padding: 24, marginBottom: 20 },
   balanceLabel: { color: colors.subtext, fontSize: 11, fontFamily: fonts.semibold, letterSpacing: 1, marginBottom: 6 },
   balance: { fontSize: 38, fontFamily: fonts.bold, color: colors.text, marginBottom: 20, letterSpacing: -0.5 },
@@ -311,12 +214,11 @@ const s = StyleSheet.create({
   monthStatValue: { fontSize: 16, fontFamily: fonts.semibold },
   divider: { width: 1, height: 32, backgroundColor: colors.border, marginHorizontal: 16 },
 
-  // novo lançamento
   newBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: colors.card, borderRadius: 14,
     paddingVertical: 14, paddingHorizontal: 18,
-    marginBottom: 24, borderWidth: 1, borderColor: colors.border,
+    marginBottom: 28, borderWidth: 1, borderColor: colors.border,
   },
   newBtnPlus: {
     width: 32, height: 32, borderRadius: 16,
@@ -326,13 +228,7 @@ const s = StyleSheet.create({
   newBtnLabel: { color: colors.text, fontFamily: fonts.medium, fontSize: 15 },
 
   sectionTitle: { color: colors.text, fontSize: 15, fontFamily: fonts.semibold, marginBottom: 14 },
-  shortcutsScroll: { marginBottom: 28 },
-  shortcutBtn: { backgroundColor: colors.card, borderRadius: 14, paddingVertical: 16, paddingHorizontal: 16, marginRight: 10, minWidth: 110 },
-  shortcutIndicator: { width: 8, height: 8, borderRadius: 4, marginBottom: 10 },
-  shortcutLabel: { color: colors.text, fontFamily: fonts.medium, fontSize: 13 },
-  shortcutType: { fontSize: 11, fontFamily: fonts.regular, marginTop: 3 },
 
-  empty: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginBottom: 8 },
   budgetItem: { marginBottom: 16 },
   budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
   budgetCategory: { color: colors.text, fontFamily: fonts.medium, fontSize: 14 },
@@ -340,7 +236,6 @@ const s = StyleSheet.create({
   progressBg: { height: 5, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' },
   progressFill: { height: 5, borderRadius: 3 },
 
-  // lista de transações
   txRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: colors.card, borderRadius: 14,
@@ -353,11 +248,9 @@ const s = StyleSheet.create({
   txDelete: { padding: 6, marginLeft: 4 },
   txDeleteText: { color: colors.subtext, fontSize: 20, lineHeight: 22 },
 
-  // modais
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28 },
-  modalTitle: { color: colors.text, fontSize: 20, fontFamily: fonts.semibold, marginBottom: 4 },
-  modalSubtitle: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginBottom: 20 },
+  modalTitle: { color: colors.text, fontSize: 20, fontFamily: fonts.semibold, marginBottom: 16 },
   typeRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   typeBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: colors.card, alignItems: 'center' },
   typeBtnExpense: { backgroundColor: colors.expenseSubtle },
