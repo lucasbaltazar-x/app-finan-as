@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import Svg, { Path, G, Text as SvgText } from 'react-native-svg';
 import { useFinance } from '../context/FinanceContext';
-import { formatCurrency, currentMonthKey } from '../utils/format';
+import { formatCurrency } from '../utils/format';
 import { colors, fonts } from '../theme';
 import DateHeader from '../components/DateHeader';
 
@@ -26,16 +26,18 @@ function donutSlice(cx: number, cy: number, outerR: number, innerR: number, star
 }
 
 export default function ChartScreen() {
-  const { transactions, removeTransaction } = useFinance();
+  const { transactions, removeTransaction, selectedDate } = useFinance();
 
-  const monthKey = currentMonthKey();
+  const monthKey = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}`;
+  const monthLabel = selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
-  const totalIncome  = transactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const totalExpense = transactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const monthTx = transactions.filter((t) => t.date.startsWith(monthKey));
+  const totalIncome  = monthTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const totalExpense = monthTx.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const balance = totalIncome - totalExpense;
 
   const { pieSlices, pieTotal } = useMemo(() => {
-    const monthExp = transactions.filter((t) => t.type === 'expense' && t.date.startsWith(monthKey));
+    const monthExp = monthTx.filter((t) => t.type === 'expense');
     const total = monthExp.reduce((s, t) => s + t.amount, 0);
     if (total === 0) return { pieSlices: [], pieTotal: 0 };
 
@@ -51,12 +53,12 @@ export default function ChartScreen() {
       return slice;
     });
     return { pieSlices: slices, pieTotal: total };
-  }, [transactions, monthKey]);
+  }, [monthTx]);
 
   return (
     <View style={s.container}>
       <FlatList
-        data={transactions}
+        data={monthTx}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         ListHeaderComponent={
@@ -88,7 +90,7 @@ export default function ChartScreen() {
             </View>
 
             {/* ── Gráfico de pizza ── */}
-            <Text style={s.sectionTitle}>Gastos do mês por categoria</Text>
+            <Text style={s.sectionTitle}>Gastos por categoria</Text>
             <View style={s.card}>
               {pieSlices.length === 0 ? (
                 <Text style={s.empty}>Nenhum gasto registrado este mês.</Text>
@@ -126,11 +128,11 @@ export default function ChartScreen() {
               )}
             </View>
 
-            <Text style={s.sectionTitle}>Todos os lançamentos</Text>
+            <Text style={s.sectionTitle}>Lançamentos — <Text style={{ color: colors.subtext, fontFamily: fonts.regular, textTransform: 'capitalize' }}>{monthLabel}</Text></Text>
           </View>
         }
         ListEmptyComponent={
-          <Text style={s.empty}>Nenhum lançamento ainda.{'\n'}Use a aba Lançar para adicionar.</Text>
+          <Text style={s.empty}>Nenhum lançamento em{'\n'}<Text style={{ textTransform: 'capitalize' }}>{monthLabel}</Text>.</Text>
         }
         renderItem={({ item }) => (
           <View style={s.item}>
