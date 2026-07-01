@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
   KeyboardAvoidingView, Platform, InputAccessoryView, Keyboard,
@@ -43,6 +43,7 @@ export default function HomeScreen() {
   const { transactions, budgets, addTransaction, removeTransaction } = useFinance();
   const { selectedDate } = useFinance();
 
+  const scrollRef = useRef<ScrollView>(null);
   const [tab, setTab] = useState<'expense' | 'income'>('expense');
   const [selCat, setSelCat] = useState<Category | null>(null);
   const [catAmount, setCatAmount] = useState('');
@@ -67,6 +68,7 @@ export default function HomeScreen() {
     setCatDesc('');
     setCatDate(selectedDate);
     setShowPicker(false);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
   }
 
   function handleSave() {
@@ -92,7 +94,7 @@ export default function HomeScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView style={s.container} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} style={s.container} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
 
         <DateHeader />
 
