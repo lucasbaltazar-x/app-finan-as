@@ -3,7 +3,6 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   useFonts,
@@ -12,6 +11,7 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
+import { Ionicons } from '@expo/vector-icons';
 
 import { FinanceProvider } from './src/context/FinanceContext';
 import HomeScreen from './src/screens/HomeScreen';
@@ -34,21 +34,14 @@ const navTheme = {
   },
 };
 
-const TAB_NAMES = ['Lançar', 'Gráfico', 'Calendário', 'Orçamento'];
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
-function TabDot({ focused }: { focused: boolean }) {
-  return (
-    <View
-      style={{
-        width: 5,
-        height: 5,
-        borderRadius: 3,
-        backgroundColor: focused ? colors.primary : 'transparent',
-        marginBottom: 2,
-      }}
-    />
-  );
-}
+const TAB_ICONS: Record<string, { focused: IoniconsName; outline: IoniconsName }> = {
+  'Lançar':     { focused: 'wallet',        outline: 'wallet-outline' },
+  'Gráfico':    { focused: 'bar-chart',     outline: 'bar-chart-outline' },
+  'Calendário': { focused: 'calendar',      outline: 'calendar-outline' },
+  'Orçamento':  { focused: 'pie-chart',     outline: 'pie-chart-outline' },
+};
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -73,20 +66,24 @@ export default function App() {
           <StatusBar style="light" />
           <Tab.Navigator
             screenOptions={({ route }) => ({
-              tabBarIcon: ({ focused }) => <TabDot focused={focused} />,
+              tabBarIcon: ({ focused, color }) => {
+                const icons = TAB_ICONS[route.name];
+                const name = focused ? icons.focused : icons.outline;
+                return <Ionicons name={name} size={22} color={color} />;
+              },
               tabBarActiveTintColor: colors.primary,
               tabBarInactiveTintColor: colors.subtext,
-              tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
-              tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border, height: 64, paddingTop: 6 },
+              tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11, marginTop: 2 },
+              tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border, height: 64, paddingTop: 4 },
               headerStyle: { backgroundColor: colors.surface, shadowOpacity: 0, elevation: 0 },
               headerTintColor: colors.text,
               headerTitleStyle: { fontFamily: fonts.semibold, fontSize: 16 },
             })}
           >
-            <Tab.Screen name="Lançar" component={HomeScreen} />
-            <Tab.Screen name="Gráfico" component={ChartScreen} />
+            <Tab.Screen name="Lançar"     component={HomeScreen} />
+            <Tab.Screen name="Gráfico"    component={ChartScreen} />
             <Tab.Screen name="Calendário" component={CalendarScreen} />
-            <Tab.Screen name="Orçamento" component={BudgetGoalsScreen} />
+            <Tab.Screen name="Orçamento"  component={BudgetGoalsScreen} />
           </Tab.Navigator>
         </NavigationContainer>
       </FinanceProvider>
