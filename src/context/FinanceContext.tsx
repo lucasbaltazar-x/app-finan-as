@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Transaction, Budget, Goal } from '../types';
+import { checkBudgetAndNotify } from '../utils/notifications';
 
 const STORAGE_KEY = '@app_financas:data';
 
@@ -56,8 +57,24 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   }, [transactions, budgets, goals, loaded]);
 
   const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => {
-    setTransactions((prev) => [{ ...t, id: genId() }, ...prev]);
-  }, []);
+    const newTx: Transaction = { ...t, id: genId() };
+    setTransactions((prev) => {
+      const updated = [newTx, ...prev];
+
+      if (t.type === 'expense') {
+        const monthKey = t.date.slice(0, 7);
+        const relevantBudgets = budgets.filter((b) => b.month === monthKey && b.category === t.category);
+        relevantBudgets.forEach((b) => {
+          const spent = updated
+            .filter((tx) => tx.type === 'expense' && tx.category === b.category && tx.date.startsWith(monthKey))
+            .reduce((s, tx) => s + tx.amount, 0);
+          checkBudgetAndNotify(b.category, spent, b.limit);
+        });
+      }
+
+      return updated;
+    });
+  }, [budgets]);
 
   const removeTransaction = useCallback((id: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
