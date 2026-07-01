@@ -217,14 +217,17 @@ export default function HomeScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleCatSave}
               />
+              <Text style={s.notesLabel}>Notas</Text>
               <TextInput
-                style={s.input}
-                placeholder="Observação (opcional)"
+                style={[s.input, s.notesInput]}
+                placeholder="Ex: fui no madero comer hamburguer..."
                 placeholderTextColor={colors.placeholder}
                 value={catDesc}
                 onChangeText={setCatDesc}
                 inputAccessoryViewID="catAccessory"
                 returnKeyType="done"
+                multiline
+                numberOfLines={3}
                 onSubmitEditing={handleCatSave}
               />
 
@@ -333,6 +336,8 @@ const s = StyleSheet.create({
     borderRadius: 6, padding: 15, color: colors.text, fontFamily: fonts.medium,
     fontSize: 16, marginBottom: 12,
   },
+  notesLabel: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 13, marginBottom: 6 },
+  notesInput: { height: 80, textAlignVertical: 'top' },
   dateRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
