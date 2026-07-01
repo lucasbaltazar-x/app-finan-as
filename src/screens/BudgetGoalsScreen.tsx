@@ -40,6 +40,11 @@ export default function BudgetGoalsScreen() {
   const [goalName, setGoalName] = useState('');
   const [goalTarget, setGoalTarget] = useState('');
 
+  // modal adicionar valor à meta
+  const [addValueGoalId, setAddValueGoalId] = useState<string | null>(null);
+  const [addValueAmount, setAddValueAmount] = useState('');
+  const [addValueMode, setAddValueMode] = useState<'add' | 'sub'>('add');
+
   const monthKey = currentMonthKey();
   const monthBudgets = budgets.filter((b) => b.month === monthKey);
   const monthTransactions = transactions.filter((t) => t.date.startsWith(monthKey));
@@ -146,16 +151,99 @@ export default function BudgetGoalsScreen() {
             </View>
             <Text style={s.pctText}>{Math.round(pct * 100)}% concluído</Text>
             <View style={s.goalActions}>
-              <TouchableOpacity style={s.goalActionBtnMinus} onPress={() => updateGoalSavedAmount(g.id, Math.max(0, g.savedAmount - 50))}>
-                <Text style={s.goalActionTextMinus}>- R$ 50</Text>
+              <TouchableOpacity style={s.goalActionBtnMinus} onPress={() => {
+                setAddValueGoalId(g.id);
+                setAddValueMode('sub');
+                setAddValueAmount('');
+              }}>
+                <Text style={s.goalActionTextMinus}>− Retirar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.goalActionBtnPlus} onPress={() => updateGoalSavedAmount(g.id, g.savedAmount + 50)}>
-                <Text style={s.goalActionTextPlus}>+ R$ 50</Text>
+              <TouchableOpacity style={s.goalActionBtnPlus} onPress={() => {
+                setAddValueGoalId(g.id);
+                setAddValueMode('add');
+                setAddValueAmount('');
+              }}>
+                <Text style={s.goalActionTextPlus}>+ Adicionar</Text>
               </TouchableOpacity>
             </View>
           </View>
         );
       })}
+
+      {/* ── Modal adicionar/retirar valor da meta ── */}
+      <Modal visible={!!addValueGoalId} animationType="slide" transparent>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={s.modalOverlay}>
+            <View style={s.modalContent}>
+              <View style={s.modalHeader}>
+                <View style={[s.modalIconWrap, { backgroundColor: (addValueMode === 'add' ? colors.income : colors.expense) + '22' }]}>
+                  <Ionicons
+                    name={addValueMode === 'add' ? 'add-circle-outline' : 'remove-circle-outline'}
+                    size={22}
+                    color={addValueMode === 'add' ? colors.income : colors.expense}
+                  />
+                </View>
+                <Text style={s.modalTitle}>{addValueMode === 'add' ? 'Adicionar à meta' : 'Retirar da meta'}</Text>
+              </View>
+              <Text style={s.modalSubtitle}>Informe o valor em reais</Text>
+
+              <TextInput
+                style={s.modalInput}
+                placeholder="Valor (ex: 200.00)"
+                placeholderTextColor={colors.placeholder}
+                keyboardType="decimal-pad"
+                value={addValueAmount}
+                onChangeText={setAddValueAmount}
+                autoFocus
+                inputAccessoryViewID="addValueAccessory"
+                returnKeyType="done"
+                onSubmitEditing={() => {
+                  const parsed = parseFloat(addValueAmount.replace(',', '.'));
+                  if (!parsed || parsed <= 0 || !addValueGoalId) return;
+                  const goal = goals.find((g) => g.id === addValueGoalId);
+                  if (!goal) return;
+                  const next = addValueMode === 'add'
+                    ? goal.savedAmount + parsed
+                    : Math.max(0, goal.savedAmount - parsed);
+                  updateGoalSavedAmount(addValueGoalId, next);
+                  setAddValueGoalId(null);
+                }}
+              />
+
+              <View style={s.modalActions}>
+                <TouchableOpacity style={s.cancelBtn} onPress={() => setAddValueGoalId(null)}>
+                  <Text style={s.cancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.saveBtn, { backgroundColor: addValueMode === 'add' ? colors.income : colors.expense }]}
+                  onPress={() => {
+                    const parsed = parseFloat(addValueAmount.replace(',', '.'));
+                    if (!parsed || parsed <= 0 || !addValueGoalId) return;
+                    const goal = goals.find((g) => g.id === addValueGoalId);
+                    if (!goal) return;
+                    const next = addValueMode === 'add'
+                      ? goal.savedAmount + parsed
+                      : Math.max(0, goal.savedAmount - parsed);
+                    updateGoalSavedAmount(addValueGoalId, next);
+                    setAddValueGoalId(null);
+                  }}
+                >
+                  <Text style={s.saveText}>{addValueMode === 'add' ? 'Adicionar' : 'Retirar'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+        {Platform.OS === 'ios' && (
+          <InputAccessoryView nativeID="addValueAccessory">
+            <View style={s.accessoryBar}>
+              <TouchableOpacity onPress={Keyboard.dismiss}>
+                <Text style={s.accessoryText}>Concluir</Text>
+              </TouchableOpacity>
+            </View>
+          </InputAccessoryView>
+        )}
+      </Modal>
 
       {/* ── Modal nova meta ── */}
       <Modal visible={goalModal} animationType="slide" transparent>
