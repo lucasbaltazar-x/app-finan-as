@@ -8,6 +8,7 @@ import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, currentMonthKey } from '../utils/format';
 import { TransactionType } from '../types';
 import { colors, fonts } from '../theme';
+import DateHeader from '../components/DateHeader';
 
 const MONTHS_SHORT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
@@ -141,6 +142,7 @@ export default function ChartScreen() {
         contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
         ListHeaderComponent={
           <View>
+            <DateHeader />
             {/* ── Gráfico de pizza ── */}
             <Text style={s.sectionTitle}>Gastos do mês</Text>
             <View style={s.card}>

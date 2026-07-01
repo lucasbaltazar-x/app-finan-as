@@ -6,6 +6,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useFinance } from '../context/FinanceContext';
+import DateHeader from '../components/DateHeader';
 import { formatCurrency, currentMonthKey } from '../utils/format';
 import { colors, fonts } from '../theme';
 import { TransactionType } from '../types';
@@ -45,9 +46,7 @@ export default function HomeScreen() {
 
   const [tab, setTab] = useState<'expense' | 'income'>('expense');
 
-  // data global (usada como padrão nos lançamentos)
-  const [globalDate, setGlobalDate] = useState(new Date());
-  const [showGlobalPicker, setShowGlobalPicker] = useState(false);
+  const { selectedDate } = useFinance();
 
   // modal categoria selecionada
   const [selCat, setSelCat] = useState<Category | null>(null);
@@ -68,7 +67,7 @@ export default function HomeScreen() {
     setSelCat(cat);
     setCatAmount('');
     setCatName('');
-    setCatDate(globalDate);
+    setCatDate(selectedDate);
     setShowPicker(false);
     setCatDesc('');
   }
@@ -94,27 +93,7 @@ export default function HomeScreen() {
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
 
-      {/* ── Data no topo ── */}
-      <TouchableOpacity style={s.topDateRow} onPress={() => setShowGlobalPicker((v) => !v)}>
-        <Text style={s.topDateText}>
-          {globalDate.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' })}
-        </Text>
-        <Text style={s.topDateChevron}>›</Text>
-      </TouchableOpacity>
-
-      {showGlobalPicker && (
-        <DateTimePicker
-          value={globalDate}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
-          maximumDate={new Date()}
-          onChange={(_, date) => {
-            if (Platform.OS === 'android') setShowGlobalPicker(false);
-            if (date) setGlobalDate(date);
-          }}
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      <DateHeader />
 
       {/* ── Saldo ── */}
       <View style={s.balanceCard}>
@@ -323,13 +302,6 @@ const s = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
 
   // saldo
-  topDateRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  topDateText: { color: colors.text, fontFamily: fonts.semibold, fontSize: 16, textTransform: 'capitalize' },
-  topDateChevron: { color: colors.primary, fontSize: 22 },
-
   balanceCard: { backgroundColor: colors.surface, borderRadius: 20, padding: 24, marginBottom: 20 },
   balanceLabel: { color: colors.subtext, fontSize: 11, fontFamily: fonts.semibold, letterSpacing: 1, marginBottom: 6 },
   balance: { fontSize: 38, fontFamily: fonts.bold, color: colors.text, marginBottom: 20, letterSpacing: -0.5 },

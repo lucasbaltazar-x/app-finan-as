@@ -12,6 +12,8 @@ interface StoredData {
 
 interface FinanceContextValue extends StoredData {
   loaded: boolean;
+  selectedDate: Date;
+  setSelectedDate: (d: Date) => void;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   removeTransaction: (id: string) => void;
   addBudget: (b: Omit<Budget, 'id'>) => void;
@@ -33,6 +35,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
@@ -92,6 +95,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         budgets,
         goals,
         loaded,
+        selectedDate,
+        setSelectedDate,
         addTransaction,
         removeTransaction,
         addBudget,

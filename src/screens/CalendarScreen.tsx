@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/format';
 import { colors, fonts } from '../theme';
+import DateHeader from '../components/DateHeader';
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -49,6 +50,7 @@ export default function CalendarScreen() {
 
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
+      <DateHeader />
       <View style={s.calHeader}>
         <TouchableOpacity onPress={() => { setCalendarDate(new Date(calYear, calMonth - 1, 1)); setSelectedDay(null); }}>
           <Text style={s.calNavBtn}>‹</Text>

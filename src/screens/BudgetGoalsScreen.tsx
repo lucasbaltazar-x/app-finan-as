@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, currentMonthKey } from '../utils/format';
 import { colors, fonts } from '../theme';
+import DateHeader from '../components/DateHeader';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -98,6 +99,7 @@ export default function BudgetGoalsScreen() {
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <DateHeader />
 
       {/* ── Orçamentos por categoria ── */}
       <View style={s.sectionRow}>
