@@ -109,18 +109,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Notas ── */}
-      <Text style={s.notesLabel}>Notas</Text>
-      <TextInput
-        style={s.notesInput}
-        placeholder="Ex: fui no madero comer hamburguer..."
-        placeholderTextColor={colors.placeholder}
-        value={catDesc}
-        onChangeText={setCatDesc}
-        multiline
-        numberOfLines={3}
-      />
-
       {/* ── Grade de categorias ── */}
       <View style={s.catGrid}>
         {cats.map((cat) => (
@@ -221,6 +209,18 @@ export default function HomeScreen() {
                 onSubmitEditing={handleCatSave}
               />
 
+
+              <Text style={s.notesLabel}>Notas</Text>
+              <TextInput
+                style={[s.input, s.notesInput]}
+                placeholder="Ex: fui no madero comer hamburguer..."
+                placeholderTextColor={colors.placeholder}
+                value={catDesc}
+                onChangeText={setCatDesc}
+                inputAccessoryViewID="catAccessory"
+                multiline
+                numberOfLines={3}
+              />
 
               <TouchableOpacity style={s.dateRow} onPress={() => { Keyboard.dismiss(); setShowPicker((v) => !v); }}>
                 <Text style={s.dateLabel}>Data</Text>
