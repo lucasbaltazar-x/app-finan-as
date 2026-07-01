@@ -124,6 +124,18 @@ export default function HomeScreen() {
         ))}
       </View>
 
+      {/* ── Notas ── */}
+      <Text style={s.notesLabel}>Notas</Text>
+      <TextInput
+        style={[s.notesInput]}
+        placeholder="Ex: fui no madero comer hamburguer..."
+        placeholderTextColor={colors.placeholder}
+        value={catDesc}
+        onChangeText={setCatDesc}
+        multiline
+        numberOfLines={3}
+      />
+
       {/* ── Orçamentos do mês ── */}
       {monthBudgets.length > 0 && (
         <>
@@ -208,17 +220,6 @@ export default function HomeScreen() {
                 onSubmitEditing={handleCatSave}
               />
 
-              <Text style={s.notesLabel}>Notas</Text>
-              <TextInput
-                style={[s.input, s.notesInput]}
-                placeholder="Ex: fui no madero comer hamburguer..."
-                placeholderTextColor={colors.placeholder}
-                value={catDesc}
-                onChangeText={setCatDesc}
-                inputAccessoryViewID="catAccessory"
-                multiline
-                numberOfLines={3}
-              />
 
               <TouchableOpacity style={s.dateRow} onPress={() => { Keyboard.dismiss(); setShowPicker((v) => !v); }}>
                 <Text style={s.dateLabel}>Data</Text>
@@ -319,8 +320,12 @@ const s = StyleSheet.create({
     borderRadius: 6, padding: 14, color: colors.text, fontFamily: fonts.medium,
     fontSize: 16, marginBottom: 12,
   },
-  notesLabel: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 13, marginBottom: 6 },
-  notesInput: { height: 80, textAlignVertical: 'top' },
+  notesLabel: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 13, marginBottom: 8 },
+  notesInput: {
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 6, padding: 14, color: colors.text, fontFamily: fonts.medium,
+    fontSize: 15, height: 80, textAlignVertical: 'top', marginBottom: 28,
+  },
   dateRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
