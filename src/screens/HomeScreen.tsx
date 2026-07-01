@@ -42,7 +42,7 @@ const INCOME_CATS: Category[] = [
 ];
 
 export default function HomeScreen() {
-  const { transactions, balance, budgets, addTransaction, removeTransaction } = useFinance();
+  const { transactions, budgets, addTransaction, removeTransaction } = useFinance();
 
   const [tab, setTab] = useState<'expense' | 'income'>('expense');
 
@@ -95,20 +95,18 @@ export default function HomeScreen() {
 
       <DateHeader />
 
-      {/* ── Saldo ── */}
-      <View style={s.balanceCard}>
-        <Text style={s.balanceLabel}>SALDO TOTAL</Text>
-        <Text style={[s.balance, balance < 0 && s.negative]}>{formatCurrency(balance)}</Text>
-        <View style={s.monthRow}>
-          <View style={s.monthStat}>
-            <Text style={s.monthStatLabel}>Receitas</Text>
-            <Text style={[s.monthStatValue, { color: colors.income }]}>{formatCurrency(income)}</Text>
-          </View>
-          <View style={s.divider} />
-          <View style={s.monthStat}>
-            <Text style={s.monthStatLabel}>Despesas</Text>
-            <Text style={[s.monthStatValue, { color: colors.expense }]}>{formatCurrency(expense)}</Text>
-          </View>
+      {/* ── Resumo do mês ── */}
+      <View style={s.monthCard}>
+        <View style={s.monthStat}>
+          <View style={[s.monthBar, { backgroundColor: colors.expense }]} />
+          <Text style={s.monthStatLabel}>Custo do mês</Text>
+          <Text style={[s.monthStatValue, { color: colors.expense }]}>-{formatCurrency(expense)}</Text>
+        </View>
+        <View style={s.divider} />
+        <View style={s.monthStat}>
+          <View style={[s.monthBar, { backgroundColor: colors.income }]} />
+          <Text style={s.monthStatLabel}>Renda do mês</Text>
+          <Text style={[s.monthStatValue, { color: colors.income }]}>+{formatCurrency(income)}</Text>
         </View>
       </View>
 
@@ -301,16 +299,13 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, paddingBottom: 40 },
 
-  // saldo
-  balanceCard: { backgroundColor: colors.surface, borderRadius: 8, padding: 24, marginBottom: 20 },
-  balanceLabel: { color: colors.subtext, fontSize: 11, fontFamily: fonts.semibold, letterSpacing: 1, marginBottom: 6 },
-  balance: { fontSize: 38, fontFamily: fonts.bold, color: colors.text, marginBottom: 20, letterSpacing: -0.5 },
-  negative: { color: colors.expense },
-  monthRow: { flexDirection: 'row', alignItems: 'center' },
+  // resumo do mês
+  monthCard: { backgroundColor: colors.surface, borderRadius: 8, padding: 18, marginBottom: 20, flexDirection: 'row', alignItems: 'center' },
+  monthBar: { width: 24, height: 3, borderRadius: 2, marginBottom: 6 },
   monthStat: { flex: 1 },
-  monthStatLabel: { color: colors.subtext, fontSize: 12, fontFamily: fonts.regular, marginBottom: 3 },
-  monthStatValue: { fontSize: 16, fontFamily: fonts.semibold },
-  divider: { width: 1, height: 32, backgroundColor: colors.border, marginHorizontal: 16 },
+  monthStatLabel: { color: colors.subtext, fontSize: 12, fontFamily: fonts.regular, marginBottom: 4 },
+  monthStatValue: { fontSize: 18, fontFamily: fonts.semibold },
+  divider: { width: 1, height: 36, backgroundColor: colors.border, marginHorizontal: 16 },
 
   // toggle custo/renda
   tabRow: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: 6, padding: 4, marginBottom: 20 },
