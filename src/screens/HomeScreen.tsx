@@ -4,37 +4,40 @@ import {
   KeyboardAvoidingView, Platform, InputAccessoryView, Keyboard,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, currentMonthKey } from '../utils/format';
 import { colors, fonts } from '../theme';
 import { TransactionType } from '../types';
 
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
 // ── Categorias ──────────────────────────────────────────────
-interface Category { label: string; color: string; custom?: boolean }
+interface Category { label: string; color: string; icon: IconName; custom?: boolean }
 
 const EXPENSE_CATS: Category[] = [
-  { label: 'Comida',           color: '#ff9800' },
-  { label: 'Itens diários',    color: '#2196f3' },
-  { label: 'Roupas',           color: '#e91e63' },
-  { label: 'Cosméticos',       color: '#9c27b0' },
-  { label: 'Entretenimento',   color: '#00bcd4' },
-  { label: 'Saúde',            color: '#4caf50' },
-  { label: 'Educação',         color: '#3f51b5' },
-  { label: 'Luz, Água e Gás',  color: '#ff5722' },
-  { label: 'Transporte',       color: '#607d8b' },
-  { label: 'Comunicação',      color: '#009688' },
-  { label: 'Contas de casa',   color: '#795548' },
-  { label: 'Editar',           color: '#4a4e5e', custom: true },
+  { label: 'Comida',          color: '#ff9800', icon: 'fast-food-outline' },
+  { label: 'Itens diários',   color: '#2196f3', icon: 'bag-handle-outline' },
+  { label: 'Roupas',          color: '#e91e63', icon: 'shirt-outline' },
+  { label: 'Cosméticos',      color: '#9c27b0', icon: 'sparkles-outline' },
+  { label: 'Entretenimento',  color: '#00bcd4', icon: 'game-controller-outline' },
+  { label: 'Saúde',           color: '#4caf50', icon: 'medkit-outline' },
+  { label: 'Educação',        color: '#3f51b5', icon: 'school-outline' },
+  { label: 'Luz, Água e Gás', color: '#ff5722', icon: 'flash-outline' },
+  { label: 'Transporte',      color: '#607d8b', icon: 'car-outline' },
+  { label: 'Comunicação',     color: '#009688', icon: 'call-outline' },
+  { label: 'Contas de casa',  color: '#795548', icon: 'home-outline' },
+  { label: 'Editar',          color: '#4a4e5e', icon: 'pencil-outline', custom: true },
 ];
 
 const INCOME_CATS: Category[] = [
-  { label: 'Salário',      color: '#4caf50' },
-  { label: 'Freelance',    color: '#2196f3' },
-  { label: 'Investimento', color: '#ff9800' },
-  { label: 'Aluguel',      color: '#9c27b0' },
-  { label: 'Presente',     color: '#e91e63' },
-  { label: 'Outros',       color: '#607d8b' },
-  { label: 'Editar',       color: '#4a4e5e', custom: true },
+  { label: 'Salário',       color: '#4caf50', icon: 'cash-outline' },
+  { label: 'Freelance',     color: '#2196f3', icon: 'laptop-outline' },
+  { label: 'Investimento',  color: '#ff9800', icon: 'trending-up-outline' },
+  { label: 'Aluguel',       color: '#9c27b0', icon: 'business-outline' },
+  { label: 'Presente',      color: '#e91e63', icon: 'gift-outline' },
+  { label: 'Outros',        color: '#607d8b', icon: 'ellipsis-horizontal-outline' },
+  { label: 'Editar',        color: '#4a4e5e', icon: 'pencil-outline', custom: true },
 ];
 
 export default function HomeScreen() {
@@ -158,7 +161,9 @@ export default function HomeScreen() {
             style={s.catCard}
             onPress={() => openCat(cat)}
           >
-            <View style={[s.catDot, { backgroundColor: cat.color }]} />
+            <View style={[s.catIconWrap, { backgroundColor: cat.color + '22' }]}>
+              <Ionicons name={cat.icon} size={24} color={cat.color} />
+            </View>
             <Text style={s.catLabel} numberOfLines={2}>{cat.label}</Text>
           </TouchableOpacity>
         ))}
@@ -217,7 +222,9 @@ export default function HomeScreen() {
             <View style={s.modalContent}>
               {/* cabeçalho colorido */}
               <View style={s.modalHeader}>
-                <View style={[s.modalDot, { backgroundColor: selCat?.color ?? colors.primary }]} />
+                <View style={[s.modalIconWrap, { backgroundColor: (selCat?.color ?? colors.primary) + '22' }]}>
+                  <Ionicons name={selCat?.icon ?? 'pencil-outline'} size={22} color={selCat?.color ?? colors.primary} />
+                </View>
                 <Text style={s.modalTitle}>{selCat?.custom ? 'Lançamento personalizado' : selCat?.label}</Text>
               </View>
               <Text style={s.modalSubtitle}>
@@ -343,10 +350,10 @@ const s = StyleSheet.create({
   // grade de categorias
   catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 28 },
   catCard: {
-    width: '30.5%', backgroundColor: colors.card, borderRadius: 14,
-    paddingVertical: 16, paddingHorizontal: 12, alignItems: 'center', gap: 10,
+    width: '30.5%', backgroundColor: colors.card, borderRadius: 16,
+    paddingVertical: 18, paddingHorizontal: 10, alignItems: 'center', gap: 10,
   },
-  catDot: { width: 10, height: 10, borderRadius: 5 },
+  catIconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   catLabel: { color: colors.text, fontFamily: fonts.medium, fontSize: 12, textAlign: 'center' },
 
   sectionTitle: { color: colors.text, fontSize: 15, fontFamily: fonts.semibold, marginBottom: 14 },
@@ -373,8 +380,8 @@ const s = StyleSheet.create({
   // modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
-  modalDot: { width: 10, height: 10, borderRadius: 5 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4 },
+  modalIconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   modalTitle: { color: colors.text, fontSize: 20, fontFamily: fonts.semibold },
   modalSubtitle: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginBottom: 20 },
   input: {
