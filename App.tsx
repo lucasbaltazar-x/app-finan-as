@@ -38,7 +38,7 @@ type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_ICONS: Record<string, { focused: IoniconsName; outline: IoniconsName }> = {
   'Lançar':     { focused: 'wallet',        outline: 'wallet-outline' },
-  'Gráfico':    { focused: 'bar-chart',     outline: 'bar-chart-outline' },
+  'Resumo':     { focused: 'bar-chart',     outline: 'bar-chart-outline' },
   'Calendário': { focused: 'calendar',      outline: 'calendar-outline' },
   'Orçamento':  { focused: 'pie-chart',     outline: 'pie-chart-outline' },
 };
@@ -81,7 +81,7 @@ export default function App() {
             })}
           >
             <Tab.Screen name="Lançar"     component={HomeScreen} />
-            <Tab.Screen name="Gráfico"    component={ChartScreen} />
+            <Tab.Screen name="Resumo"     component={ChartScreen} />
             <Tab.Screen name="Calendário" component={CalendarScreen} />
             <Tab.Screen name="Orçamento"  component={BudgetGoalsScreen} />
           </Tab.Navigator>
