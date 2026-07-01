@@ -36,6 +36,7 @@ export default function BudgetGoalsScreen() {
   const [selCat, setSelCat] = useState<BudgetCategory | null>(null);
   const [limitValue, setLimitValue] = useState('');
 
+  const [goalModal, setGoalModal] = useState(false);
   const [goalName, setGoalName] = useState('');
   const [goalTarget, setGoalTarget] = useState('');
 
@@ -61,6 +62,7 @@ export default function BudgetGoalsScreen() {
     addGoal({ name: goalName.trim(), targetAmount: target, savedAmount: 0 });
     setGoalName('');
     setGoalTarget('');
+    setGoalModal(false);
   }
 
   function spentFor(category: string) {
@@ -119,27 +121,13 @@ export default function BudgetGoalsScreen() {
       })}
 
       {/* ── Metas de economia ── */}
-      <Text style={[s.sectionTitle, { marginTop: 32 }]}>Metas de economia</Text>
-      <View style={s.formRow}>
-        <TextInput
-          style={[s.input, { flex: 1 }]}
-          placeholder="Nome da meta"
-          placeholderTextColor={colors.placeholder}
-          value={goalName}
-          onChangeText={setGoalName}
-        />
-        <TextInput
-          style={[s.input, { width: 110 }]}
-          placeholder="Valor R$"
-          placeholderTextColor={colors.placeholder}
-          keyboardType="decimal-pad"
-          value={goalTarget}
-          onChangeText={setGoalTarget}
-        />
-        <TouchableOpacity style={s.addBtn} onPress={handleAddGoal}>
-          <Text style={s.addBtnText}>+</Text>
+      <View style={s.sectionRow}>
+        <Text style={[s.sectionTitle, { marginTop: 32, marginBottom: 0 }]}>Metas de economia</Text>
+        <TouchableOpacity style={s.addGoalBtn} onPress={() => { setGoalName(''); setGoalTarget(''); setGoalModal(true); }}>
+          <Text style={s.addGoalBtnText}>+ Nova meta</Text>
         </TouchableOpacity>
       </View>
+      <View style={{ marginTop: 14 }} />
 
       {goals.length === 0 && <Text style={s.empty}>Nenhuma meta ainda.</Text>}
       {goals.map((g) => {
@@ -168,6 +156,63 @@ export default function BudgetGoalsScreen() {
           </View>
         );
       })}
+
+      {/* ── Modal nova meta ── */}
+      <Modal visible={goalModal} animationType="slide" transparent>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={s.modalOverlay}>
+            <View style={s.modalContent}>
+              <View style={s.modalHeader}>
+                <View style={[s.modalIconWrap, { backgroundColor: colors.primary + '22' }]}>
+                  <Ionicons name="flag-outline" size={22} color={colors.primary} />
+                </View>
+                <Text style={s.modalTitle}>Nova meta</Text>
+              </View>
+              <Text style={s.modalSubtitle}>Defina um objetivo de economia</Text>
+
+              <TextInput
+                style={s.modalInput}
+                placeholder="Nome da meta (ex: Viagem)"
+                placeholderTextColor={colors.placeholder}
+                value={goalName}
+                onChangeText={setGoalName}
+                autoFocus
+                inputAccessoryViewID="goalAccessory"
+                returnKeyType="next"
+              />
+              <TextInput
+                style={s.modalInput}
+                placeholder="Valor alvo (ex: 2000.00)"
+                placeholderTextColor={colors.placeholder}
+                keyboardType="decimal-pad"
+                value={goalTarget}
+                onChangeText={setGoalTarget}
+                inputAccessoryViewID="goalAccessory"
+                returnKeyType="done"
+                onSubmitEditing={handleAddGoal}
+              />
+
+              <View style={s.modalActions}>
+                <TouchableOpacity style={s.cancelBtn} onPress={() => setGoalModal(false)}>
+                  <Text style={s.cancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.saveBtn} onPress={handleAddGoal}>
+                  <Text style={s.saveText}>Criar meta</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+        {Platform.OS === 'ios' && (
+          <InputAccessoryView nativeID="goalAccessory">
+            <View style={s.accessoryBar}>
+              <TouchableOpacity onPress={Keyboard.dismiss}>
+                <Text style={s.accessoryText}>Concluir</Text>
+              </TouchableOpacity>
+            </View>
+          </InputAccessoryView>
+        )}
+      </Modal>
 
       {/* ── Modal definir limite ── */}
       <Modal visible={!!selCat} animationType="slide" transparent>
@@ -249,11 +294,10 @@ const s = StyleSheet.create({
   progressBg: { height: 4, borderRadius: 2, backgroundColor: colors.border, overflow: 'hidden' },
   progressFill: { height: 4, borderRadius: 2 },
 
-  // metas
-  formRow: { flexDirection: 'row', gap: 8, marginBottom: 14, alignItems: 'center' },
-  input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, color: colors.text, fontFamily: fonts.regular },
-  addBtn: { width: 42, height: 42, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  addBtnText: { color: '#fff', fontSize: 22, lineHeight: 24, fontFamily: fonts.regular },
+  // cabeçalho de seção com botão
+  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  addGoalBtn: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10, backgroundColor: colors.primaryLight, marginTop: 32 },
+  addGoalBtnText: { color: colors.primary, fontFamily: fonts.semibold, fontSize: 13 },
   empty: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginBottom: 10 },
   goalItem: { backgroundColor: colors.card, borderRadius: 14, padding: 16, marginBottom: 12 },
   goalName: { color: colors.text, fontFamily: fonts.medium, fontSize: 15 },
