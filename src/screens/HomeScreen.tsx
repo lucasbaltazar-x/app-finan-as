@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
   KeyboardAvoidingView, Platform, InputAccessoryView, Keyboard,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -9,11 +9,9 @@ import { useFinance } from '../context/FinanceContext';
 import DateHeader from '../components/DateHeader';
 import { formatCurrency, currentMonthKey } from '../utils/format';
 import { colors, fonts } from '../theme';
-import { TransactionType } from '../types';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-// ── Categorias ──────────────────────────────────────────────
 interface Category { label: string; color: string; icon: IconName; custom?: boolean }
 
 const EXPENSE_CATS: Category[] = [
@@ -43,15 +41,12 @@ const INCOME_CATS: Category[] = [
 
 export default function HomeScreen() {
   const { transactions, budgets, addTransaction, removeTransaction } = useFinance();
-
-  const [tab, setTab] = useState<'expense' | 'income'>('expense');
-
   const { selectedDate } = useFinance();
 
-  // modal categoria selecionada
+  const [tab, setTab] = useState<'expense' | 'income'>('expense');
   const [selCat, setSelCat] = useState<Category | null>(null);
   const [catAmount, setCatAmount] = useState('');
-  const [catName, setCatName] = useState('');   // só usado em "Editar"
+  const [catName, setCatName] = useState('');
   const [catDesc, setCatDesc] = useState('');
   const [catDate, setCatDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
@@ -61,16 +56,20 @@ export default function HomeScreen() {
   const monthBudgets = budgets.filter((b) => b.month === monthKey);
   const recent = transactions.slice(0, 5);
 
-  function openCat(cat: Category) {
+  function selectCat(cat: Category) {
+    if (selCat?.label === cat.label) {
+      setSelCat(null);
+      return;
+    }
     setSelCat(cat);
     setCatAmount('');
     setCatName('');
+    setCatDesc('');
     setCatDate(selectedDate);
     setShowPicker(false);
-    setCatDesc('');
   }
 
-  function handleCatSave() {
+  function handleSave() {
     if (!selCat) return;
     const parsed = parseFloat(catAmount.replace(',', '.'));
     if (!parsed || parsed <= 0) return;
@@ -84,201 +83,194 @@ export default function HomeScreen() {
       date: catDate.toISOString(),
     });
     setSelCat(null);
+    setCatAmount('');
+    setCatDesc('');
   }
 
   const cats = tab === 'expense' ? EXPENSE_CATS : INCOME_CATS;
+  const accentColor = selCat?.color ?? (tab === 'expense' ? colors.expense : colors.income);
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={s.content}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView style={s.container} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
 
-      <DateHeader />
+        <DateHeader />
 
-
-      {/* ── Toggle Custo / Renda ── */}
-      <View style={s.tabRow}>
-        <TouchableOpacity
-          style={[s.tabBtn, tab === 'expense' && s.tabBtnExpenseActive]}
-          onPress={() => setTab('expense')}
-        >
-          <Text style={[s.tabBtnText, tab === 'expense' && { color: colors.expense, fontFamily: fonts.semibold }]}>
-            Custo
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[s.tabBtn, tab === 'income' && s.tabBtnIncomeActive]}
-          onPress={() => setTab('income')}
-        >
-          <Text style={[s.tabBtnText, tab === 'income' && { color: colors.income, fontFamily: fonts.semibold }]}>
-            Renda
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Grade de categorias ── */}
-      <View style={s.catGrid}>
-        {cats.map((cat) => (
+        {/* ── Toggle Custo / Renda ── */}
+        <View style={s.tabRow}>
           <TouchableOpacity
-            key={cat.label}
-            style={s.catCard}
-            onPress={() => openCat(cat)}
+            style={[s.tabBtn, tab === 'expense' && s.tabBtnExpenseActive]}
+            onPress={() => { setTab('expense'); setSelCat(null); }}
           >
-            <View style={[s.catIconWrap, { backgroundColor: cat.color + '22' }]}>
-              <Ionicons name={cat.icon} size={24} color={cat.color} />
-            </View>
-            <Text style={s.catLabel} numberOfLines={2}>{cat.label}</Text>
+            <Text style={[s.tabBtnText, tab === 'expense' && { color: colors.expense, fontFamily: fonts.semibold }]}>
+              Custo
+            </Text>
           </TouchableOpacity>
-        ))}
-      </View>
+          <TouchableOpacity
+            style={[s.tabBtn, tab === 'income' && s.tabBtnIncomeActive]}
+            onPress={() => { setTab('income'); setSelCat(null); }}
+          >
+            <Text style={[s.tabBtnText, tab === 'income' && { color: colors.income, fontFamily: fonts.semibold }]}>
+              Renda
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* ── Orçamentos do mês ── */}
-      {monthBudgets.length > 0 && (
-        <>
-          <Text style={s.sectionTitle}>Orçamentos do mês</Text>
-          {monthBudgets.map((b) => {
-            const spent = monthTransactions
-              .filter((t) => t.type === 'expense' && t.category === b.category)
-              .reduce((sum, t) => sum + t.amount, 0);
-            const pct = b.limit > 0 ? Math.min(spent / b.limit, 1) : 0;
+        {/* ── Grade de categorias ── */}
+        <View style={s.catGrid}>
+          {cats.map((cat) => {
+            const isSelected = selCat?.label === cat.label;
             return (
-              <View key={b.id} style={s.budgetItem}>
-                <View style={s.budgetHeader}>
-                  <Text style={s.budgetCategory}>{b.category}</Text>
-                  <Text style={s.budgetAmounts}>{formatCurrency(spent)} / {formatCurrency(b.limit)}</Text>
+              <TouchableOpacity
+                key={cat.label}
+                style={[s.catCard, isSelected && { borderColor: cat.color, borderWidth: 2, backgroundColor: cat.color + '18' }]}
+                onPress={() => selectCat(cat)}
+              >
+                <View style={[s.catIconWrap, { backgroundColor: cat.color + '22' }]}>
+                  <Ionicons name={cat.icon} size={24} color={cat.color} />
                 </View>
-                <View style={s.progressBg}>
-                  <View style={[s.progressFill, { width: `${pct * 100}%`, backgroundColor: pct >= 1 ? colors.expense : colors.primary }]} />
-                </View>
-              </View>
+                <Text style={[s.catLabel, isSelected && { color: cat.color }]} numberOfLines={2}>{cat.label}</Text>
+              </TouchableOpacity>
             );
           })}
-        </>
-      )}
+        </View>
 
-      {/* ── Últimas transações ── */}
-      {recent.length > 0 && (
-        <>
-          <Text style={s.sectionTitle}>Últimas transações</Text>
-          {recent.map((t) => (
-            <View key={t.id} style={s.txRow}>
-              <View style={[s.txDot, { backgroundColor: t.type === 'income' ? colors.income : colors.expense }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={s.txCategory}>{t.category}</Text>
-                {!!t.description && <Text style={s.txDesc}>{t.description}</Text>}
+        {/* ── Formulário inline ── */}
+        {selCat && (
+          <View style={[s.form, { borderLeftColor: accentColor }]}>
+            <View style={s.formHeader}>
+              <View style={[s.formIconWrap, { backgroundColor: accentColor + '22' }]}>
+                <Ionicons name={selCat.icon} size={18} color={accentColor} />
               </View>
-              <Text style={[s.txAmount, { color: t.type === 'income' ? colors.income : colors.expense }]}>
-                {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+              <Text style={[s.formTitle, { color: accentColor }]}>
+                {selCat.custom ? 'Personalizado' : selCat.label}
               </Text>
-              <TouchableOpacity style={s.txDelete} onPress={() => removeTransaction(t.id)}>
-                <Text style={s.txDeleteText}>×</Text>
+              <TouchableOpacity onPress={() => setSelCat(null)} style={{ marginLeft: 'auto' }}>
+                <Ionicons name="close" size={20} color={colors.subtext} />
               </TouchableOpacity>
             </View>
-          ))}
-        </>
-      )}
 
-      {/* ── Modal lançamento por categoria ── */}
-      <Modal visible={!!selCat} animationType="slide" transparent>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={s.modalOverlay}>
-            <View style={s.modalContent}>
-              {/* cabeçalho colorido */}
-              <View style={s.modalHeader}>
-                <View style={[s.modalIconWrap, { backgroundColor: (selCat?.color ?? colors.primary) + '22' }]}>
-                  <Ionicons name={selCat?.icon ?? 'pencil-outline'} size={22} color={selCat?.color ?? colors.primary} />
-                </View>
-                <Text style={s.modalTitle}>{selCat?.custom ? 'Lançamento personalizado' : selCat?.label}</Text>
-              </View>
-              <Text style={s.modalSubtitle}>
-                {tab === 'expense' ? 'Custo' : 'Renda'}
-              </Text>
-
-              {/* campo nome só aparece no "Editar" */}
-              {selCat?.custom && (
-                <TextInput
-                  style={s.input}
-                  placeholder="Nome do lançamento"
-                  placeholderTextColor={colors.placeholder}
-                  value={catName}
-                  onChangeText={setCatName}
-                  inputAccessoryViewID="catAccessory"
-                  returnKeyType="next"
-                />
-              )}
-
+            {selCat.custom && (
               <TextInput
                 style={s.input}
-                placeholder="Valor (ex: 150.00)"
+                placeholder="Nome do lançamento"
                 placeholderTextColor={colors.placeholder}
-                keyboardType="decimal-pad"
-                value={catAmount}
-                onChangeText={setCatAmount}
-                autoFocus={!selCat?.custom}
-                inputAccessoryViewID="catAccessory"
-                returnKeyType="done"
-                onSubmitEditing={handleCatSave}
+                value={catName}
+                onChangeText={setCatName}
+                inputAccessoryViewID="formAccessory"
+                returnKeyType="next"
               />
-              <Text style={s.notesLabel}>Notas</Text>
-              <TextInput
-                style={[s.input, s.notesInput]}
-                placeholder="Ex: fui no madero comer hamburguer..."
-                placeholderTextColor={colors.placeholder}
-                value={catDesc}
-                onChangeText={setCatDesc}
-                inputAccessoryViewID="catAccessory"
-                returnKeyType="done"
-                multiline
-                numberOfLines={3}
-                onSubmitEditing={handleCatSave}
-              />
+            )}
 
-              {/* Seletor de data */}
-              <TouchableOpacity style={s.dateRow} onPress={() => { Keyboard.dismiss(); setShowPicker(true); }}>
-                <Text style={s.dateLabel}>Data</Text>
-                <Text style={s.dateValue}>
-                  {catDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+            <TextInput
+              style={s.input}
+              placeholder="Valor (ex: 150.00)"
+              placeholderTextColor={colors.placeholder}
+              keyboardType="decimal-pad"
+              value={catAmount}
+              onChangeText={setCatAmount}
+              autoFocus
+              inputAccessoryViewID="formAccessory"
+              returnKeyType="next"
+            />
+
+            <Text style={s.notesLabel}>Notas</Text>
+            <TextInput
+              style={[s.input, s.notesInput]}
+              placeholder="Ex: fui no madero comer hamburguer..."
+              placeholderTextColor={colors.placeholder}
+              value={catDesc}
+              onChangeText={setCatDesc}
+              inputAccessoryViewID="formAccessory"
+              multiline
+              numberOfLines={3}
+            />
+
+            <TouchableOpacity style={s.dateRow} onPress={() => { Keyboard.dismiss(); setShowPicker((v) => !v); }}>
+              <Text style={s.dateLabel}>Data</Text>
+              <Text style={s.dateValue}>
+                {catDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </Text>
+            </TouchableOpacity>
+
+            {showPicker && (
+              <DateTimePicker
+                value={catDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                maximumDate={new Date()}
+                onChange={(_, date) => {
+                  if (Platform.OS === 'android') setShowPicker(false);
+                  if (date) setCatDate(date);
+                }}
+                style={{ marginBottom: 12 }}
+              />
+            )}
+
+            <TouchableOpacity style={[s.saveBtn, { backgroundColor: accentColor }]} onPress={handleSave}>
+              <Text style={s.saveText}>Lançar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ── Orçamentos do mês ── */}
+        {monthBudgets.length > 0 && (
+          <>
+            <Text style={s.sectionTitle}>Orçamentos do mês</Text>
+            {monthBudgets.map((b) => {
+              const spent = monthTransactions
+                .filter((t) => t.type === 'expense' && t.category === b.category)
+                .reduce((sum, t) => sum + t.amount, 0);
+              const pct = b.limit > 0 ? Math.min(spent / b.limit, 1) : 0;
+              return (
+                <View key={b.id} style={s.budgetItem}>
+                  <View style={s.budgetHeader}>
+                    <Text style={s.budgetCategory}>{b.category}</Text>
+                    <Text style={s.budgetAmounts}>{formatCurrency(spent)} / {formatCurrency(b.limit)}</Text>
+                  </View>
+                  <View style={s.progressBg}>
+                    <View style={[s.progressFill, { width: `${pct * 100}%`, backgroundColor: pct >= 1 ? colors.expense : colors.primary }]} />
+                  </View>
+                </View>
+              );
+            })}
+          </>
+        )}
+
+        {/* ── Últimas transações ── */}
+        {recent.length > 0 && (
+          <>
+            <Text style={s.sectionTitle}>Últimas transações</Text>
+            {recent.map((t) => (
+              <View key={t.id} style={s.txRow}>
+                <View style={[s.txDot, { backgroundColor: t.type === 'income' ? colors.income : colors.expense }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={s.txCategory}>{t.category}</Text>
+                  {!!t.description && <Text style={s.txDesc}>{t.description}</Text>}
+                </View>
+                <Text style={[s.txAmount, { color: t.type === 'income' ? colors.income : colors.expense }]}>
+                  {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
                 </Text>
-              </TouchableOpacity>
-
-              {showPicker && (
-                <DateTimePicker
-                  value={catDate}
-                  mode="date"
-                  display={Platform.OS === 'ios' ? 'inline' : 'default'}
-                  maximumDate={new Date()}
-                  onChange={(_, date) => {
-                    if (Platform.OS === 'android') setShowPicker(false);
-                    if (date) setCatDate(date);
-                  }}
-                  style={{ marginBottom: 12 }}
-                />
-              )}
-
-              <View style={s.modalActions}>
-                <TouchableOpacity style={s.cancelBtn} onPress={() => setSelCat(null)}>
-                  <Text style={s.cancelText}>Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[s.saveBtn, { backgroundColor: tab === 'expense' ? colors.expense : colors.income }]}
-                  onPress={handleCatSave}
-                >
-                  <Text style={s.saveText}>Lançar</Text>
+                <TouchableOpacity style={s.txDelete} onPress={() => removeTransaction(t.id)}>
+                  <Text style={s.txDeleteText}>×</Text>
                 </TouchableOpacity>
               </View>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-        {Platform.OS === 'ios' && (
-          <InputAccessoryView nativeID="catAccessory">
-            <View style={s.accessoryBar}>
-              <TouchableOpacity onPress={Keyboard.dismiss}>
-                <Text style={s.accessoryText}>Concluir</Text>
-              </TouchableOpacity>
-            </View>
-          </InputAccessoryView>
+            ))}
+          </>
         )}
-      </Modal>
 
-    </ScrollView>
+      </ScrollView>
+
+      {Platform.OS === 'ios' && (
+        <InputAccessoryView nativeID="formAccessory">
+          <View style={s.accessoryBar}>
+            <TouchableOpacity onPress={Keyboard.dismiss}>
+              <Text style={s.accessoryText}>Concluir</Text>
+            </TouchableOpacity>
+          </View>
+        </InputAccessoryView>
+      )}
+    </KeyboardAvoidingView>
   );
 }
 
@@ -286,25 +278,48 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, paddingBottom: 40 },
 
-
-  // toggle custo/renda
   tabRow: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: 6, padding: 4, marginBottom: 20 },
   tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 4 },
   tabBtnExpenseActive: { backgroundColor: colors.expenseSubtle },
   tabBtnIncomeActive:  { backgroundColor: colors.incomeSubtle },
   tabBtnText: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 14 },
 
-  // grade de categorias
-  catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 28 },
+  catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   catCard: {
     width: '30.5%', backgroundColor: colors.card, borderRadius: 6,
     paddingVertical: 18, paddingHorizontal: 10, alignItems: 'center', gap: 10,
+    borderWidth: 2, borderColor: 'transparent',
   },
   catIconWrap: { width: 48, height: 48, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   catLabel: { color: colors.text, fontFamily: fonts.medium, fontSize: 12, textAlign: 'center' },
 
-  sectionTitle: { color: colors.text, fontSize: 15, fontFamily: fonts.semibold, marginBottom: 14 },
+  // formulário inline
+  form: {
+    backgroundColor: colors.surface, borderRadius: 8,
+    padding: 18, marginBottom: 28,
+    borderLeftWidth: 3,
+  },
+  formHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  formIconWrap: { width: 32, height: 32, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  formTitle: { fontSize: 15, fontFamily: fonts.semibold },
+  input: {
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 6, padding: 14, color: colors.text, fontFamily: fonts.medium,
+    fontSize: 16, marginBottom: 12,
+  },
+  notesLabel: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 13, marginBottom: 6 },
+  notesInput: { height: 80, textAlignVertical: 'top' },
+  dateRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 6, paddingVertical: 13, paddingHorizontal: 14, marginBottom: 14,
+  },
+  dateLabel: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 14 },
+  dateValue: { color: colors.text, fontFamily: fonts.semibold, fontSize: 14 },
+  saveBtn: { padding: 15, alignItems: 'center', borderRadius: 6 },
+  saveText: { color: '#fff', fontFamily: fonts.semibold, fontSize: 15 },
 
+  sectionTitle: { color: colors.text, fontSize: 15, fontFamily: fonts.semibold, marginBottom: 14 },
   budgetItem: { marginBottom: 16 },
   budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
   budgetCategory: { color: colors.text, fontFamily: fonts.medium, fontSize: 14 },
@@ -324,32 +339,6 @@ const s = StyleSheet.create({
   txDelete: { padding: 6, marginLeft: 4 },
   txDeleteText: { color: colors.subtext, fontSize: 20, lineHeight: 22 },
 
-  // modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: 10, borderTopRightRadius: 10, padding: 28 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4 },
-  modalIconWrap: { width: 42, height: 42, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  modalTitle: { color: colors.text, fontSize: 20, fontFamily: fonts.semibold },
-  modalSubtitle: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginBottom: 20 },
-  input: {
-    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
-    borderRadius: 6, padding: 15, color: colors.text, fontFamily: fonts.medium,
-    fontSize: 16, marginBottom: 12,
-  },
-  notesLabel: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 13, marginBottom: 6 },
-  notesInput: { height: 80, textAlignVertical: 'top' },
-  dateRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
-    borderRadius: 6, paddingVertical: 14, paddingHorizontal: 15, marginBottom: 12,
-  },
-  dateLabel: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 14 },
-  dateValue: { color: colors.text, fontFamily: fonts.semibold, fontSize: 14 },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  cancelBtn: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 6, backgroundColor: colors.card },
-  cancelText: { color: colors.subtext, fontFamily: fonts.medium },
-  saveBtn: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 6, backgroundColor: colors.primary },
-  saveText: { color: '#fff', fontFamily: fonts.semibold },
   accessoryBar: { backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.border, padding: 10, alignItems: 'flex-end' },
   accessoryText: { color: colors.primary, fontFamily: fonts.semibold, fontSize: 16, paddingHorizontal: 8 },
 });
