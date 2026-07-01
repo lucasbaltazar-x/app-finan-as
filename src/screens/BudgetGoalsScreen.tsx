@@ -36,6 +36,11 @@ export default function BudgetGoalsScreen() {
   const [selCat, setSelCat] = useState<BudgetCategory | null>(null);
   const [limitValue, setLimitValue] = useState('');
 
+  // modal novo orçamento personalizado
+  const [customBudgetModal, setCustomBudgetModal] = useState(false);
+  const [customBudgetName, setCustomBudgetName] = useState('');
+  const [customBudgetLimit, setCustomBudgetLimit] = useState('');
+
   const [goalModal, setGoalModal] = useState(false);
   const [goalName, setGoalName] = useState('');
   const [goalTarget, setGoalTarget] = useState('');
@@ -61,6 +66,17 @@ export default function BudgetGoalsScreen() {
     setLimitValue('');
   }
 
+  function handleAddCustomBudget() {
+    const limit = parseFloat(customBudgetLimit.replace(',', '.'));
+    if (!customBudgetName.trim() || !limit || limit <= 0) return;
+    const existing = monthBudgets.find((b) => b.category === customBudgetName.trim());
+    if (existing) removeBudget(existing.id);
+    addBudget({ category: customBudgetName.trim(), limit, month: monthKey });
+    setCustomBudgetName('');
+    setCustomBudgetLimit('');
+    setCustomBudgetModal(false);
+  }
+
   function handleAddGoal() {
     const target = parseFloat(goalTarget.replace(',', '.'));
     if (!goalName.trim() || !target || target <= 0) return;
@@ -84,7 +100,13 @@ export default function BudgetGoalsScreen() {
     <ScrollView style={s.container} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
 
       {/* ── Orçamentos por categoria ── */}
-      <Text style={s.sectionTitle}>Orçamentos do mês</Text>
+      <View style={s.sectionRow}>
+        <Text style={[s.sectionTitle, { marginBottom: 0 }]}>Orçamentos do mês</Text>
+        <TouchableOpacity style={s.addGoalBtn} onPress={() => { setCustomBudgetName(''); setCustomBudgetLimit(''); setCustomBudgetModal(true); }}>
+          <Text style={s.addGoalBtnText}>+ Novo</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={{ marginBottom: 14 }} />
 
       {BUDGET_CATS.map((cat) => {
         const budget = budgetFor(cat.label);
@@ -120,6 +142,32 @@ export default function BudgetGoalsScreen() {
                   }]} />
                 </View>
               )}
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+
+      {/* ── Orçamentos personalizados ── */}
+      {monthBudgets.filter((b) => !BUDGET_CATS.find((c) => c.label === b.category)).map((b) => {
+        const spent = spentFor(b.category);
+        const pct = Math.min(spent / b.limit, 1);
+        return (
+          <TouchableOpacity
+            key={b.id}
+            style={s.catRow}
+            onPress={() => { setCustomBudgetName(b.category); setCustomBudgetLimit(String(b.limit)); setCustomBudgetModal(true); }}
+          >
+            <View style={[s.catIconWrap, { backgroundColor: colors.primary + '22' }]}>
+              <Ionicons name="wallet-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, gap: 6 }}>
+              <View style={s.catRowHeader}>
+                <Text style={s.catLabel}>{b.category}</Text>
+                <Text style={s.catLimitText}>{formatCurrency(spent)} / {formatCurrency(b.limit)}</Text>
+              </View>
+              <View style={s.progressBg}>
+                <View style={[s.progressFill, { width: `${pct * 100}%`, backgroundColor: pct >= 1 ? colors.expense : colors.primary }]} />
+              </View>
             </View>
           </TouchableOpacity>
         );
@@ -169,6 +217,72 @@ export default function BudgetGoalsScreen() {
           </View>
         );
       })}
+
+      {/* ── Modal novo orçamento personalizado ── */}
+      <Modal visible={customBudgetModal} animationType="slide" transparent>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={s.modalOverlay}>
+            <View style={s.modalContent}>
+              <View style={s.modalHeader}>
+                <View style={[s.modalIconWrap, { backgroundColor: colors.primary + '22' }]}>
+                  <Ionicons name="wallet-outline" size={22} color={colors.primary} />
+                </View>
+                <Text style={s.modalTitle}>Novo orçamento</Text>
+              </View>
+              <Text style={s.modalSubtitle}>Crie um orçamento para qualquer categoria</Text>
+
+              <TextInput
+                style={s.modalInput}
+                placeholder="Nome (ex: Pets, Assinaturas…)"
+                placeholderTextColor={colors.placeholder}
+                value={customBudgetName}
+                onChangeText={setCustomBudgetName}
+                autoFocus
+                inputAccessoryViewID="customBudgetAccessory"
+                returnKeyType="next"
+              />
+              <TextInput
+                style={s.modalInput}
+                placeholder="Limite mensal (ex: 300.00)"
+                placeholderTextColor={colors.placeholder}
+                keyboardType="decimal-pad"
+                value={customBudgetLimit}
+                onChangeText={setCustomBudgetLimit}
+                inputAccessoryViewID="customBudgetAccessory"
+                returnKeyType="done"
+                onSubmitEditing={handleAddCustomBudget}
+              />
+
+              <View style={s.modalActions}>
+                <TouchableOpacity style={s.cancelBtn} onPress={() => setCustomBudgetModal(false)}>
+                  <Text style={s.cancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                {monthBudgets.find((b) => b.category === customBudgetName.trim()) && (
+                  <TouchableOpacity style={s.removeBtn} onPress={() => {
+                    const b = monthBudgets.find((x) => x.category === customBudgetName.trim());
+                    if (b) removeBudget(b.id);
+                    setCustomBudgetModal(false);
+                  }}>
+                    <Text style={s.removeBtnText}>Remover</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={s.saveBtn} onPress={handleAddCustomBudget}>
+                  <Text style={s.saveText}>Salvar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+        {Platform.OS === 'ios' && (
+          <InputAccessoryView nativeID="customBudgetAccessory">
+            <View style={s.accessoryBar}>
+              <TouchableOpacity onPress={Keyboard.dismiss}>
+                <Text style={s.accessoryText}>Concluir</Text>
+              </TouchableOpacity>
+            </View>
+          </InputAccessoryView>
+        )}
+      </Modal>
 
       {/* ── Modal adicionar/retirar valor da meta ── */}
       <Modal visible={!!addValueGoalId} animationType="slide" transparent>
