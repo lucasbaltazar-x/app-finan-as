@@ -109,7 +109,7 @@ export default function App() {
         <Modal visible={showWelcome} transparent animationType="fade">
           <View style={ws.overlay}>
             <View style={ws.card}>
-              <Text style={ws.title}>Bem-vindo ao Finanças</Text>
+              <Text style={ws.title}>Bem-vindo ao Grana+</Text>
               <View style={ws.bullets}>
                 <Text style={ws.bullet}>• Lançar custos e rendas por categoria</Text>
                 <Text style={ws.bullet}>• Acompanhe seu orçamento mensal</Text>

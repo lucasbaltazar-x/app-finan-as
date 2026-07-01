@@ -73,7 +73,7 @@ const splashSvg = `
     font-weight="700"
     fill="${WHITE}"
     letter-spacing="-2"
-  >Finanças</text>
+  >Grana+</text>
 
   <!-- tagline -->
   <text
