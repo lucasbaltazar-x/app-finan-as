@@ -58,8 +58,6 @@ export default function HomeScreen() {
 
   const monthKey = currentMonthKey();
   const monthTransactions = transactions.filter((t) => t.date.startsWith(monthKey));
-  const income  = monthTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const expense = monthTransactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const monthBudgets = budgets.filter((b) => b.month === monthKey);
   const recent = transactions.slice(0, 5);
 
@@ -95,20 +93,6 @@ export default function HomeScreen() {
 
       <DateHeader />
 
-      {/* ── Resumo do mês ── */}
-      <View style={s.monthCard}>
-        <View style={s.monthStat}>
-          <View style={[s.monthBar, { backgroundColor: colors.expense }]} />
-          <Text style={s.monthStatLabel}>Custo do mês</Text>
-          <Text style={[s.monthStatValue, { color: colors.expense }]}>-{formatCurrency(expense)}</Text>
-        </View>
-        <View style={s.divider} />
-        <View style={s.monthStat}>
-          <View style={[s.monthBar, { backgroundColor: colors.income }]} />
-          <Text style={s.monthStatLabel}>Renda do mês</Text>
-          <Text style={[s.monthStatValue, { color: colors.income }]}>+{formatCurrency(income)}</Text>
-        </View>
-      </View>
 
       {/* ── Toggle Custo / Renda ── */}
       <View style={s.tabRow}>
@@ -299,13 +283,6 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, paddingBottom: 40 },
 
-  // resumo do mês
-  monthCard: { backgroundColor: colors.surface, borderRadius: 8, padding: 18, marginBottom: 20, flexDirection: 'row', alignItems: 'center' },
-  monthBar: { width: 24, height: 3, borderRadius: 2, marginBottom: 6 },
-  monthStat: { flex: 1 },
-  monthStatLabel: { color: colors.subtext, fontSize: 12, fontFamily: fonts.regular, marginBottom: 4 },
-  monthStatValue: { fontSize: 18, fontFamily: fonts.semibold },
-  divider: { width: 1, height: 36, backgroundColor: colors.border, marginHorizontal: 16 },
 
   // toggle custo/renda
   tabRow: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: 6, padding: 4, marginBottom: 20 },
