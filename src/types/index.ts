@@ -7,6 +7,17 @@ export interface Transaction {
   category: string;
   description: string;
   date: string; // ISO string
+  recurringId?: string; // se for gerado por um template recorrente
+}
+
+export interface RecurringTemplate {
+  id: string;
+  type: TransactionType;
+  amount: number;
+  category: string;
+  description: string;
+  dayOfMonth: number; // dia do mês para lançar
+  lastAppliedMonth: string; // 'YYYY-MM' do último mês gerado
 }
 
 export interface Budget {

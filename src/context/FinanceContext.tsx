@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Transaction, Budget, Goal } from '../types';
+import { Transaction, Budget, Goal, RecurringTemplate } from '../types';
 import { checkBudgetAndNotify } from '../utils/notifications';
 import { exportBackup, importBackup } from '../utils/backup';
 
@@ -10,6 +10,7 @@ interface StoredData {
   transactions: Transaction[];
   budgets: Budget[];
   goals: Goal[];
+  recurringTemplates: RecurringTemplate[];
 }
 
 interface FinanceContextValue extends StoredData {
@@ -23,6 +24,8 @@ interface FinanceContextValue extends StoredData {
   addGoal: (g: Omit<Goal, 'id'>) => void;
   updateGoalSavedAmount: (id: string, savedAmount: number) => void;
   removeGoal: (id: string) => void;
+  addRecurring: (t: Omit<RecurringTemplate, 'id' | 'lastAppliedMonth'>) => void;
+  removeRecurring: (id: string) => void;
   balance: number;
   exportData: () => Promise<boolean>;
   importData: () => Promise<boolean>;
@@ -38,6 +41,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [recurringTemplates, setRecurringTemplates] = useState<RecurringTemplate[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
@@ -48,6 +52,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setTransactions(data.transactions ?? []);
         setBudgets(data.budgets ?? []);
         setGoals(data.goals ?? []);
+        setRecurringTemplates(data.recurringTemplates ?? []);
       }
       setLoaded(true);
     });
@@ -55,9 +60,30 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loaded) return;
-    const data: StoredData = { transactions, budgets, goals };
+    const data: StoredData = { transactions, budgets, goals, recurringTemplates };
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [transactions, budgets, goals, loaded]);
+  }, [transactions, budgets, goals, recurringTemplates, loaded]);
+
+  // Aplica templates recorrentes ao abrir o app
+  useEffect(() => {
+    if (!loaded || recurringTemplates.length === 0) return;
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    setRecurringTemplates((prev) => {
+      const toApply = prev.filter((t) => t.lastAppliedMonth !== currentMonth);
+      if (toApply.length === 0) return prev;
+
+      const newTxs: Transaction[] = toApply.map((t) => {
+        const day = Math.min(t.dayOfMonth, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate());
+        const date = new Date(now.getFullYear(), now.getMonth(), day);
+        return { id: genId(), type: t.type, amount: t.amount, category: t.category, description: t.description, date: date.toISOString(), recurringId: t.id };
+      });
+
+      setTransactions((txPrev) => [...newTxs, ...txPrev]);
+      return prev.map((t) => toApply.find((a) => a.id === t.id) ? { ...t, lastAppliedMonth: currentMonth } : t);
+    });
+  }, [loaded]);
 
   const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => {
     const newTx: Transaction = { ...t, id: genId() };
@@ -103,9 +129,19 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setGoals((prev) => prev.filter((g) => g.id !== id));
   }, []);
 
+  const addRecurring = useCallback((t: Omit<RecurringTemplate, 'id' | 'lastAppliedMonth'>) => {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    setRecurringTemplates((prev) => [{ ...t, id: genId(), lastAppliedMonth: currentMonth }, ...prev]);
+  }, []);
+
+  const removeRecurring = useCallback((id: string) => {
+    setRecurringTemplates((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
   const exportData = useCallback(async () => {
-    return exportBackup({ transactions, budgets, goals });
-  }, [transactions, budgets, goals]);
+    return exportBackup({ transactions, budgets, goals, recurringTemplates });
+  }, [transactions, budgets, goals, recurringTemplates]);
 
   const importData = useCallback(async () => {
     const data = await importBackup() as StoredData | null;
@@ -113,6 +149,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setTransactions(data.transactions ?? []);
     setBudgets(data.budgets ?? []);
     setGoals(data.goals ?? []);
+    setRecurringTemplates(data.recurringTemplates ?? []);
     return true;
   }, []);
 
@@ -127,6 +164,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         transactions,
         budgets,
         goals,
+        recurringTemplates,
         loaded,
         selectedDate,
         setSelectedDate,
@@ -137,6 +175,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         addGoal,
         updateGoalSavedAmount,
         removeGoal,
+        addRecurring,
+        removeRecurring,
         balance,
         exportData,
         importData,

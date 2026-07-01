@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Switch,
   KeyboardAvoidingView, Platform, InputAccessoryView, Keyboard,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFinance } from '../context/FinanceContext';
 import DateHeader from '../components/DateHeader';
 import { formatCurrency, currentMonthKey } from '../utils/format';
+import { maskCurrency, parseMasked } from '../utils/currency';
 import { colors, fonts } from '../theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -40,7 +41,7 @@ const INCOME_CATS: Category[] = [
 ];
 
 export default function HomeScreen() {
-  const { transactions, budgets, addTransaction, removeTransaction } = useFinance();
+  const { transactions, budgets, addTransaction, removeTransaction, addRecurring } = useFinance();
   const { selectedDate } = useFinance();
 
   const [tab, setTab] = useState<'expense' | 'income'>('expense');
@@ -50,6 +51,7 @@ export default function HomeScreen() {
   const [catDesc, setCatDesc] = useState('');
   const [catDate, setCatDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
 
   const monthKey = currentMonthKey();
   const monthTransactions = transactions.filter((t) => t.date.startsWith(monthKey));
@@ -63,11 +65,12 @@ export default function HomeScreen() {
     setCatDate(selectedDate);
     setShowPicker(false);
     setCatDesc('');
+    setIsRecurring(false);
   }
 
   function handleCatSave() {
     if (!selCat) return;
-    const parsed = parseFloat(catAmount.replace(',', '.'));
+    const parsed = parseMasked(catAmount);
     if (!parsed || parsed <= 0) return;
     const category = selCat.custom ? catName.trim() : selCat.label;
     if (!category) return;
@@ -78,6 +81,15 @@ export default function HomeScreen() {
       description: catDesc.trim(),
       date: catDate.toISOString(),
     });
+    if (isRecurring) {
+      addRecurring({
+        type: tab,
+        amount: parsed,
+        category,
+        description: catDesc.trim(),
+        dayOfMonth: catDate.getDate(),
+      });
+    }
     setSelCat(null);
     setCatDesc('');
   }
@@ -196,18 +208,20 @@ export default function HomeScreen() {
                 />
               )}
 
-              <TextInput
-                style={s.input}
-                placeholder="Valor (ex: 150.00)"
-                placeholderTextColor={colors.placeholder}
-                keyboardType="decimal-pad"
-                value={catAmount}
-                onChangeText={setCatAmount}
-                autoFocus={!selCat?.custom}
-                inputAccessoryViewID="catAccessory"
-                returnKeyType="next"
-                onSubmitEditing={handleCatSave}
-              />
+              <View style={s.amountRow}>
+                <Text style={s.amountPrefix}>R$</Text>
+                <TextInput
+                  style={[s.input, s.amountInput]}
+                  placeholder="0,00"
+                  placeholderTextColor={colors.placeholder}
+                  keyboardType="number-pad"
+                  value={catAmount}
+                  onChangeText={(v) => setCatAmount(maskCurrency(v))}
+                  autoFocus={!selCat?.custom}
+                  inputAccessoryViewID="catAccessory"
+                  returnKeyType="next"
+                />
+              </View>
 
 
               <Text style={s.notesLabel}>Notas</Text>
@@ -242,6 +256,19 @@ export default function HomeScreen() {
                   style={{ marginBottom: 12 }}
                 />
               )}
+
+              <View style={s.recurringRow}>
+                <View>
+                  <Text style={s.recurringLabel}>Repetir todo mês</Text>
+                  <Text style={s.recurringDesc}>Lança automaticamente no dia {catDate.getDate()}</Text>
+                </View>
+                <Switch
+                  value={isRecurring}
+                  onValueChange={setIsRecurring}
+                  trackColor={{ false: colors.border, true: colors.primary + '88' }}
+                  thumbColor={isRecurring ? colors.primary : colors.subtext}
+                />
+              </View>
 
               <View style={s.modalActions}>
                 <TouchableOpacity style={s.cancelBtn} onPress={() => setSelCat(null)}>
@@ -321,7 +348,16 @@ const s = StyleSheet.create({
     borderRadius: 6, padding: 14, color: colors.text, fontFamily: fonts.medium,
     fontSize: 16, marginBottom: 12,
   },
+  amountRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  amountPrefix: { color: colors.subtext, fontFamily: fonts.semibold, fontSize: 18, marginRight: 8 },
+  amountInput: { flex: 1, marginBottom: 0, fontSize: 22, fontFamily: fonts.bold },
   notesLabel: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 13, marginBottom: 8 },
+  recurringRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: colors.card, borderRadius: 6, padding: 14, marginBottom: 14,
+  },
+  recurringLabel: { color: colors.text, fontFamily: fonts.medium, fontSize: 14 },
+  recurringDesc: { color: colors.subtext, fontFamily: fonts.regular, fontSize: 12, marginTop: 2 },
   notesInput: {
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
     borderRadius: 6, padding: 14, color: colors.text, fontFamily: fonts.medium,
