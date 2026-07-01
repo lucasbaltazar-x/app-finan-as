@@ -20,7 +20,9 @@
       "Bash(tasklist)",
       "Bash(netstat -ano)",
       "Bash(taskkill //PID 11096 //F)",
-      "Bash(npm view *)"
+      "Bash(npm view *)",
+      "Bash(npm install *)",
+      "Bash(node generate-assets.mjs)"
     ]
   }
 }

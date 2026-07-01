@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Transaction, Budget, Goal } from '../types';
 import { checkBudgetAndNotify } from '../utils/notifications';
+import { exportBackup, importBackup } from '../utils/backup';
 
 const STORAGE_KEY = '@app_financas:data';
 
@@ -23,6 +24,8 @@ interface FinanceContextValue extends StoredData {
   updateGoalSavedAmount: (id: string, savedAmount: number) => void;
   removeGoal: (id: string) => void;
   balance: number;
+  exportData: () => Promise<boolean>;
+  importData: () => Promise<boolean>;
 }
 
 const FinanceContext = createContext<FinanceContextValue | undefined>(undefined);
@@ -100,6 +103,19 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setGoals((prev) => prev.filter((g) => g.id !== id));
   }, []);
 
+  const exportData = useCallback(async () => {
+    return exportBackup({ transactions, budgets, goals });
+  }, [transactions, budgets, goals]);
+
+  const importData = useCallback(async () => {
+    const data = await importBackup() as StoredData | null;
+    if (!data || !data.transactions) return false;
+    setTransactions(data.transactions ?? []);
+    setBudgets(data.budgets ?? []);
+    setGoals(data.goals ?? []);
+    return true;
+  }, []);
+
   const balance = transactions.reduce(
     (sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount),
     0
@@ -122,6 +138,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         updateGoalSavedAmount,
         removeGoal,
         balance,
+        exportData,
+        importData,
       }}
     >
       {children}
