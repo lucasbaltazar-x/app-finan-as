@@ -302,7 +302,7 @@ const s = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
 
   // saldo
-  balanceCard: { backgroundColor: colors.surface, borderRadius: 20, padding: 24, marginBottom: 20 },
+  balanceCard: { backgroundColor: colors.surface, borderRadius: 8, padding: 24, marginBottom: 20 },
   balanceLabel: { color: colors.subtext, fontSize: 11, fontFamily: fonts.semibold, letterSpacing: 1, marginBottom: 6 },
   balance: { fontSize: 38, fontFamily: fonts.bold, color: colors.text, marginBottom: 20, letterSpacing: -0.5 },
   negative: { color: colors.expense },
@@ -313,8 +313,8 @@ const s = StyleSheet.create({
   divider: { width: 1, height: 32, backgroundColor: colors.border, marginHorizontal: 16 },
 
   // toggle custo/renda
-  tabRow: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: 14, padding: 4, marginBottom: 20 },
-  tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+  tabRow: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: 6, padding: 4, marginBottom: 20 },
+  tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 4 },
   tabBtnExpenseActive: { backgroundColor: colors.expenseSubtle },
   tabBtnIncomeActive:  { backgroundColor: colors.incomeSubtle },
   tabBtnText: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 14 },
@@ -322,10 +322,10 @@ const s = StyleSheet.create({
   // grade de categorias
   catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 28 },
   catCard: {
-    width: '30.5%', backgroundColor: colors.card, borderRadius: 16,
+    width: '30.5%', backgroundColor: colors.card, borderRadius: 6,
     paddingVertical: 18, paddingHorizontal: 10, alignItems: 'center', gap: 10,
   },
-  catIconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  catIconWrap: { width: 48, height: 48, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   catLabel: { color: colors.text, fontFamily: fonts.medium, fontSize: 12, textAlign: 'center' },
 
   sectionTitle: { color: colors.text, fontSize: 15, fontFamily: fonts.semibold, marginBottom: 14 },
@@ -339,7 +339,7 @@ const s = StyleSheet.create({
 
   txRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: colors.card, borderRadius: 14,
+    backgroundColor: colors.card, borderRadius: 6,
     paddingVertical: 12, paddingHorizontal: 14, marginBottom: 8,
   },
   txDot: { width: 3, height: 32, borderRadius: 2 },
@@ -351,27 +351,27 @@ const s = StyleSheet.create({
 
   // modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28 },
+  modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: 10, borderTopRightRadius: 10, padding: 28 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4 },
-  modalIconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  modalIconWrap: { width: 42, height: 42, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   modalTitle: { color: colors.text, fontSize: 20, fontFamily: fonts.semibold },
   modalSubtitle: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginBottom: 20 },
   input: {
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
-    borderRadius: 12, padding: 15, color: colors.text, fontFamily: fonts.medium,
+    borderRadius: 6, padding: 15, color: colors.text, fontFamily: fonts.medium,
     fontSize: 16, marginBottom: 12,
   },
   dateRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
-    borderRadius: 12, paddingVertical: 14, paddingHorizontal: 15, marginBottom: 12,
+    borderRadius: 6, paddingVertical: 14, paddingHorizontal: 15, marginBottom: 12,
   },
   dateLabel: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 14 },
   dateValue: { color: colors.text, fontFamily: fonts.semibold, fontSize: 14 },
   modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  cancelBtn: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 12, backgroundColor: colors.card },
+  cancelBtn: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 6, backgroundColor: colors.card },
   cancelText: { color: colors.subtext, fontFamily: fonts.medium },
-  saveBtn: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 12, backgroundColor: colors.primary },
+  saveBtn: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 6, backgroundColor: colors.primary },
   saveText: { color: '#fff', fontFamily: fonts.semibold },
   accessoryBar: { backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.border, padding: 10, alignItems: 'flex-end' },
   accessoryText: { color: colors.primary, fontFamily: fonts.semibold, fontSize: 16, paddingHorizontal: 8 },

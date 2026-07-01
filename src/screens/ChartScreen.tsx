@@ -158,7 +158,7 @@ export default function ChartScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
 
-  balanceCard: { backgroundColor: colors.surface, borderRadius: 20, padding: 20, marginBottom: 24 },
+  balanceCard: { backgroundColor: colors.surface, borderRadius: 8, padding: 20, marginBottom: 24 },
   row: { flexDirection: 'row', alignItems: 'flex-start' },
   statBox: { flex: 1, alignItems: 'flex-start', gap: 6 },
   statBar: { width: 28, height: 3, borderRadius: 2 },
@@ -171,7 +171,7 @@ const s = StyleSheet.create({
   balanceValue: { fontSize: 22, fontFamily: fonts.bold, letterSpacing: -0.5 },
 
   sectionTitle: { color: colors.text, fontSize: 15, fontFamily: fonts.semibold, marginBottom: 14 },
-  card: { backgroundColor: colors.card, borderRadius: 18, padding: 18, marginBottom: 28 },
+  card: { backgroundColor: colors.card, borderRadius: 8, padding: 18, marginBottom: 28 },
   pieRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   legend: { flex: 1, gap: 10 },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -183,7 +183,7 @@ const s = StyleSheet.create({
   empty: { color: colors.subtext, fontFamily: fonts.regular, textAlign: 'center', marginTop: 10, lineHeight: 22 },
   item: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: colors.card, borderRadius: 14,
+    backgroundColor: colors.card, borderRadius: 6,
     paddingVertical: 12, paddingHorizontal: 14, marginBottom: 10,
   },
   itemAccent: { width: 3, height: 36, borderRadius: 2 },
