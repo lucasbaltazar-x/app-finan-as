@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Switch,
-  KeyboardAvoidingView, Platform, InputAccessoryView, Keyboard,
+  KeyboardAvoidingView, Platform, InputAccessoryView, Keyboard, Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +15,7 @@ type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 interface Category { label: string; color: string; icon: IconName; custom?: boolean }
 
-const EXPENSE_CATS: Category[] = [
+const EXPENSE_CATS_BASE: Category[] = [
   { label: 'Comida',          color: '#ff9800', icon: 'fast-food-outline' },
   { label: 'Itens diários',   color: '#2196f3', icon: 'bag-handle-outline' },
   { label: 'Roupas',          color: '#e91e63', icon: 'shirt-outline' },
@@ -27,21 +27,25 @@ const EXPENSE_CATS: Category[] = [
   { label: 'Transporte',      color: '#607d8b', icon: 'car-outline' },
   { label: 'Comunicação',     color: '#009688', icon: 'call-outline' },
   { label: 'Contas de casa',  color: '#795548', icon: 'home-outline' },
-  { label: 'Editar',          color: '#4a4e5e', icon: 'pencil-outline', custom: true },
 ];
 
-const INCOME_CATS: Category[] = [
+const INCOME_CATS_BASE: Category[] = [
   { label: 'Salário',       color: '#4caf50', icon: 'cash-outline' },
   { label: 'Freelance',     color: '#2196f3', icon: 'laptop-outline' },
   { label: 'Investimento',  color: '#ff9800', icon: 'trending-up-outline' },
   { label: 'Aluguel',       color: '#9c27b0', icon: 'business-outline' },
   { label: 'Presente',      color: '#e91e63', icon: 'gift-outline' },
   { label: 'Outros',        color: '#607d8b', icon: 'ellipsis-horizontal-outline' },
-  { label: 'Editar',        color: '#4a4e5e', icon: 'pencil-outline', custom: true },
 ];
 
+const EDIT_CAT: Category = { label: 'Editar', color: '#4a4e5e', icon: 'pencil-outline', custom: true };
+
 export default function HomeScreen() {
-  const { transactions, budgets, addTransaction, removeTransaction, addRecurring } = useFinance();
+  const {
+    transactions, budgets, addTransaction, removeTransaction,
+    addRecurring, recurringTemplates, removeRecurring,
+    customCategories, addCustomCategory,
+  } = useFinance();
   const { selectedDate } = useFinance();
 
   const [tab, setTab] = useState<'expense' | 'income'>('expense');
@@ -57,6 +61,17 @@ export default function HomeScreen() {
   const monthTransactions = transactions.filter((t) => t.date.startsWith(monthKey));
   const monthBudgets = budgets.filter((b) => b.month === monthKey);
   const recent = transactions.slice(0, 5);
+
+  // Build category lists merging custom ones
+  const customExpense: Category[] = customCategories
+    .filter((c) => c.type === 'expense')
+    .map((c) => ({ label: c.label, color: '#607d8b', icon: 'ellipsis-horizontal-outline' as IconName }));
+  const customIncome: Category[] = customCategories
+    .filter((c) => c.type === 'income')
+    .map((c) => ({ label: c.label, color: '#607d8b', icon: 'ellipsis-horizontal-outline' as IconName }));
+
+  const EXPENSE_CATS: Category[] = [...EXPENSE_CATS_BASE, ...customExpense, EDIT_CAT];
+  const INCOME_CATS: Category[] = [...INCOME_CATS_BASE, ...customIncome, EDIT_CAT];
 
   function openCat(cat: Category) {
     setSelCat(cat);
@@ -90,8 +105,34 @@ export default function HomeScreen() {
         dayOfMonth: catDate.getDate(),
       });
     }
+    // If custom category, persist it
+    if (selCat.custom && catName.trim()) {
+      addCustomCategory(catName.trim(), tab);
+    }
     setSelCat(null);
     setCatDesc('');
+  }
+
+  function confirmDeleteTransaction(id: string) {
+    Alert.alert(
+      'Excluir lançamento',
+      'Tem certeza?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Excluir', style: 'destructive', onPress: () => removeTransaction(id) },
+      ]
+    );
+  }
+
+  function confirmDeleteRecurring(id: string) {
+    Alert.alert(
+      'Excluir recorrente',
+      'Tem certeza que deseja remover este lançamento recorrente?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Excluir', style: 'destructive', onPress: () => removeRecurring(id) },
+      ]
+    );
   }
 
   const cats = tab === 'expense' ? EXPENSE_CATS : INCOME_CATS;
@@ -175,7 +216,29 @@ export default function HomeScreen() {
               <Text style={[s.txAmount, { color: t.type === 'income' ? colors.income : colors.expense }]}>
                 {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
               </Text>
-              <TouchableOpacity style={s.txDelete} onPress={() => removeTransaction(t.id)}>
+              <TouchableOpacity style={s.txDelete} onPress={() => confirmDeleteTransaction(t.id)}>
+                <Text style={s.txDeleteText}>×</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </>
+      )}
+
+      {/* ── Lançamentos recorrentes ── */}
+      {recurringTemplates.length > 0 && (
+        <>
+          <Text style={s.sectionTitle}>Lançamentos recorrentes</Text>
+          {recurringTemplates.map((r) => (
+            <View key={r.id} style={s.txRow}>
+              <View style={[s.txDot, { backgroundColor: r.type === 'income' ? colors.income : colors.expense }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={s.txCategory}>{r.category}</Text>
+                <Text style={s.txDesc}>todo dia {r.dayOfMonth}</Text>
+              </View>
+              <Text style={[s.txAmount, { color: r.type === 'income' ? colors.income : colors.expense }]}>
+                {r.type === 'income' ? '+' : '-'}{formatCurrency(r.amount)}
+              </Text>
+              <TouchableOpacity style={s.txDelete} onPress={() => confirmDeleteRecurring(r.id)}>
                 <Text style={s.txDeleteText}>×</Text>
               </TouchableOpacity>
             </View>

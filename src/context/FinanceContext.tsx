@@ -6,11 +6,17 @@ import { exportBackup, importBackup } from '../utils/backup';
 
 const STORAGE_KEY = '@app_financas:data';
 
+interface CustomCategory {
+  label: string;
+  type: 'expense' | 'income';
+}
+
 interface StoredData {
   transactions: Transaction[];
   budgets: Budget[];
   goals: Goal[];
   recurringTemplates: RecurringTemplate[];
+  customCategories: CustomCategory[];
 }
 
 interface FinanceContextValue extends StoredData {
@@ -26,6 +32,8 @@ interface FinanceContextValue extends StoredData {
   removeGoal: (id: string) => void;
   addRecurring: (t: Omit<RecurringTemplate, 'id' | 'lastAppliedMonth'>) => void;
   removeRecurring: (id: string) => void;
+  addCustomCategory: (label: string, type: 'expense' | 'income') => void;
+  removeCustomCategory: (label: string, type: 'expense' | 'income') => void;
   balance: number;
   exportData: () => Promise<boolean>;
   importData: () => Promise<boolean>;
@@ -42,6 +50,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [recurringTemplates, setRecurringTemplates] = useState<RecurringTemplate[]>([]);
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
@@ -53,6 +62,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setBudgets(data.budgets ?? []);
         setGoals(data.goals ?? []);
         setRecurringTemplates(data.recurringTemplates ?? []);
+        setCustomCategories(data.customCategories ?? []);
       }
       setLoaded(true);
     });
@@ -60,9 +70,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loaded) return;
-    const data: StoredData = { transactions, budgets, goals, recurringTemplates };
+    const data: StoredData = { transactions, budgets, goals, recurringTemplates, customCategories };
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [transactions, budgets, goals, recurringTemplates, loaded]);
+  }, [transactions, budgets, goals, recurringTemplates, customCategories, loaded]);
 
   // Aplica templates recorrentes ao abrir o app
   useEffect(() => {
@@ -139,9 +149,20 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setRecurringTemplates((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const addCustomCategory = useCallback((label: string, type: 'expense' | 'income') => {
+    setCustomCategories((prev) => {
+      if (prev.find((c) => c.label === label && c.type === type)) return prev;
+      return [...prev, { label, type }];
+    });
+  }, []);
+
+  const removeCustomCategory = useCallback((label: string, type: 'expense' | 'income') => {
+    setCustomCategories((prev) => prev.filter((c) => !(c.label === label && c.type === type)));
+  }, []);
+
   const exportData = useCallback(async () => {
-    return exportBackup({ transactions, budgets, goals, recurringTemplates });
-  }, [transactions, budgets, goals, recurringTemplates]);
+    return exportBackup({ transactions, budgets, goals, recurringTemplates, customCategories });
+  }, [transactions, budgets, goals, recurringTemplates, customCategories]);
 
   const importData = useCallback(async () => {
     const data = await importBackup() as StoredData | null;
@@ -150,6 +171,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setBudgets(data.budgets ?? []);
     setGoals(data.goals ?? []);
     setRecurringTemplates(data.recurringTemplates ?? []);
+    setCustomCategories((data as StoredData).customCategories ?? []);
     return true;
   }, []);
 
@@ -165,6 +187,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         budgets,
         goals,
         recurringTemplates,
+        customCategories,
         loaded,
         selectedDate,
         setSelectedDate,
@@ -177,6 +200,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         removeGoal,
         addRecurring,
         removeRecurring,
+        addCustomCategory,
+        removeCustomCategory,
         balance,
         exportData,
         importData,

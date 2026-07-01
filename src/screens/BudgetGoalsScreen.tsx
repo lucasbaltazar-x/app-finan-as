@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
-  Modal, KeyboardAvoidingView, Platform, InputAccessoryView, Keyboard,
+  Modal, KeyboardAvoidingView, Platform, InputAccessoryView, Keyboard, Alert,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, currentMonthKey } from '../utils/format';
@@ -45,6 +46,8 @@ export default function BudgetGoalsScreen() {
   const [goalModal, setGoalModal] = useState(false);
   const [goalName, setGoalName] = useState('');
   const [goalTarget, setGoalTarget] = useState('');
+  const [goalDeadline, setGoalDeadline] = useState('');
+  const [showGoalPicker, setShowGoalPicker] = useState(false);
 
   // modal adicionar valor à meta
   const [addValueGoalId, setAddValueGoalId] = useState<string | null>(null);
@@ -81,9 +84,10 @@ export default function BudgetGoalsScreen() {
   function handleAddGoal() {
     const target = parseFloat(goalTarget.replace(',', '.'));
     if (!goalName.trim() || !target || target <= 0) return;
-    addGoal({ name: goalName.trim(), targetAmount: target, savedAmount: 0 });
+    addGoal({ name: goalName.trim(), targetAmount: target, savedAmount: 0, deadline: goalDeadline || undefined });
     setGoalName('');
     setGoalTarget('');
+    setGoalDeadline('');
     setGoalModal(false);
   }
 
@@ -196,6 +200,9 @@ export default function BudgetGoalsScreen() {
               </TouchableOpacity>
             </View>
             <Text style={s.goalAmounts}>{formatCurrency(g.savedAmount)} / {formatCurrency(g.targetAmount)}</Text>
+            {!!g.deadline && (
+              <Text style={s.goalDeadline}>Prazo: {new Date(g.deadline).toLocaleDateString('pt-BR')}</Text>
+            )}
             <View style={s.progressBg}>
               <View style={[s.progressFill, { width: `${pct * 100}%`, backgroundColor: colors.primary }]} />
             </View>
@@ -396,6 +403,32 @@ export default function BudgetGoalsScreen() {
                 onSubmitEditing={handleAddGoal}
               />
 
+              <TouchableOpacity
+                style={s.dateRow}
+                onPress={() => { Keyboard.dismiss(); setShowGoalPicker((v) => !v); }}
+              >
+                <Text style={s.dateLabel}>Prazo (opcional)</Text>
+                <Text style={s.dateValue}>
+                  {goalDeadline
+                    ? new Date(goalDeadline).toLocaleDateString('pt-BR')
+                    : 'Sem prazo'}
+                </Text>
+              </TouchableOpacity>
+
+              {showGoalPicker && (
+                <DateTimePicker
+                  value={goalDeadline ? new Date(goalDeadline) : new Date()}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                  minimumDate={new Date()}
+                  onChange={(_, date) => {
+                    if (Platform.OS === 'android') setShowGoalPicker(false);
+                    if (date) setGoalDeadline(date.toISOString());
+                  }}
+                  style={{ marginBottom: 12 }}
+                />
+              )}
+
               <View style={s.modalActions}>
                 <TouchableOpacity style={s.cancelBtn} onPress={() => setGoalModal(false)}>
                   <Text style={s.cancelText}>Cancelar</Text>
@@ -506,6 +539,14 @@ const s = StyleSheet.create({
   goalItem: { backgroundColor: colors.card, borderRadius: 6, padding: 16, marginBottom: 12 },
   goalName: { color: colors.text, fontFamily: fonts.medium, fontSize: 15 },
   goalAmounts: { color: colors.subtext, fontSize: 13, fontFamily: fonts.regular, marginTop: 8, marginBottom: 8 },
+  goalDeadline: { color: colors.subtext, fontSize: 12, fontFamily: fonts.regular, marginBottom: 6 },
+  dateRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 6, paddingVertical: 13, paddingHorizontal: 14, marginBottom: 16,
+  },
+  dateLabel: { color: colors.subtext, fontFamily: fonts.medium, fontSize: 14 },
+  dateValue: { color: colors.text, fontFamily: fonts.semibold, fontSize: 14 },
   pctText: { color: colors.primary, fontSize: 11, fontFamily: fonts.medium, marginTop: 6, marginBottom: 10 },
   removeText: { color: colors.expense, fontSize: 18, fontFamily: fonts.medium },
   goalActions: { flexDirection: 'row', gap: 8 },

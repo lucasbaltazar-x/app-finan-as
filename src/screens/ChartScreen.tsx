@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, TextInput } from 'react-native';
 import Svg, { Path, G, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useFinance } from '../context/FinanceContext';
@@ -41,6 +41,7 @@ function diffLabel(curr: number, prev: number): { text: string; color: string; i
 
 export default function ChartScreen() {
   const { transactions, removeTransaction, selectedDate, exportData, importData } = useFinance();
+  const [search, setSearch] = useState('');
 
   const monthKey = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}`;
   const monthLabel = selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
@@ -51,6 +52,12 @@ export default function ChartScreen() {
   const prevLabel = prevDate.toLocaleDateString('pt-BR', { month: 'long' });
 
   const monthTx = transactions.filter((t) => t.date.startsWith(monthKey));
+  const filteredTx = search.trim()
+    ? monthTx.filter((t) =>
+        t.category.toLowerCase().includes(search.toLowerCase()) ||
+        (t.description ?? '').toLowerCase().includes(search.toLowerCase())
+      )
+    : monthTx;
   const prevTx   = transactions.filter((t) => t.date.startsWith(prevKey));
 
   const totalIncome   = monthTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
@@ -100,15 +107,43 @@ export default function ChartScreen() {
     );
   }
 
+  function confirmDeleteTransaction(id: string) {
+    Alert.alert(
+      'Excluir lançamento',
+      'Tem certeza?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Excluir', style: 'destructive', onPress: () => removeTransaction(id) },
+      ]
+    );
+  }
+
   return (
     <View style={s.container}>
       <FlatList
-        data={monthTx}
+        data={filteredTx}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         ListHeaderComponent={
           <View>
             <DateHeader />
+
+            {/* ── Busca ── */}
+            <View style={s.searchRow}>
+              <Ionicons name="search-outline" size={16} color={colors.placeholder} style={{ marginLeft: 12 }} />
+              <TextInput
+                style={s.searchInput}
+                placeholder="Buscar por categoria ou descrição…"
+                placeholderTextColor={colors.placeholder}
+                value={search}
+                onChangeText={setSearch}
+              />
+              {search.length > 0 && (
+                <TouchableOpacity onPress={() => setSearch('')} style={{ paddingRight: 12 }}>
+                  <Ionicons name="close-circle" size={16} color={colors.subtext} />
+                </TouchableOpacity>
+              )}
+            </View>
 
             {/* ── Balanço ── */}
             <View style={s.balanceCard}>
@@ -258,7 +293,7 @@ export default function ChartScreen() {
             <Text style={[s.itemAmount, { color: item.type === 'income' ? colors.income : colors.expense }]}>
               {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
             </Text>
-            <TouchableOpacity style={s.deleteBtn} onPress={() => removeTransaction(item.id)}>
+            <TouchableOpacity style={s.deleteBtn} onPress={() => confirmDeleteTransaction(item.id)}>
               <Text style={s.deleteBtnText}>×</Text>
             </TouchableOpacity>
           </View>
@@ -314,6 +349,15 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
   },
   backupBtnText: { color: colors.primary, fontFamily: fonts.semibold, fontSize: 13 },
+
+  searchRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 6, marginBottom: 20,
+  },
+  searchInput: {
+    flex: 1, padding: 12, color: colors.text, fontFamily: fonts.medium, fontSize: 14,
+  },
 
   empty: { color: colors.subtext, fontFamily: fonts.regular, textAlign: 'center', marginTop: 10, lineHeight: 22 },
   item: {
