@@ -24,6 +24,7 @@ export default function DateHeader() {
           value={selectedDate}
           mode="date"
           display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          locale="pt-BR"
           maximumDate={new Date()}
           onChange={(_, date) => {
             if (Platform.OS === 'android') setShowPicker(false);
